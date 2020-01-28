@@ -17,3 +17,5 @@
 
 # npm package lock file
 /package-lock.json
+device.conf
+config.json
