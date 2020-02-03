@@ -23,6 +23,9 @@
         <ons-fab ripple id="set_iterations" style="display: none;">
             <span style="font-weight: 700; font-family: monospace;">&#x00D7;k</span>
         </ons-fab>
+        <ons-fab ripple id="set_iterations_segment" style="display: none;">
+            <span style="font-weight: 700; font-family: monospace;">&#x00D7;<span id="set_iterations_segment_number">1</span></span>
+        </ons-fab>
         <ons-fab ripple id="add_zone">
             <ons-icon icon="fa-plus"></ons-icon>
         </ons-fab>
@@ -47,8 +50,7 @@
         </ons-fab>
     </div>
 
-    <script type="module" crossorigin>
-        import { VacuumMap } from "./zone/js-modules/vacuum-map.js"
+    <script>
         const loadingBar = document.getElementById('loading-bar-map');
         let map = null;
 
@@ -56,34 +58,50 @@
             return new Promise((resolve, reject) => {
                 if (checkMapExistance && map !== null) {
                     resolve(map);
+                    return;
                 }
+                let gzippedMapData;
                 loadingBar.setAttribute("indeterminate", "indeterminate");
                 fn.prequest("api/map/latest", "GET", "arraybuffer")
-                .then(gzippedMapData => {
+                .then(res => {
+                    gzippedMapData = res;
+                    return fn.device.ver === 3 ? fn.prequest("api/segment_names") : null;
+                })
+                .then(res => {
+                    var segmentNames = {};
+                    if (res !== null) {
+                        res.forEach(pair => segmentNames[pair[0]] = pair[1]);
+                    }
                     if(map === null) {
-                        map = new VacuumMap(document.getElementById('map-canvas'));
-                        map.initCanvas(gzippedMapData);
+                        map = fn.createVacuumMap(document.getElementById('map-canvas'));
+                        map.initCanvas(gzippedMapData,{showSegments: true, segmentNames: segmentNames});
+                        if (checkMapExistance) {
+                            resolve(map);
+                            return;
+                        }
                     } else {
+                        map.updateSegmentNames(segmentNames);
                         map.updateMap(map.parseMap(gzippedMapData));
                     }
                     map.initWebSocket();
                     resolve(map);
-                }, err => {
-                    fn.notificationToastError(err);
-                    reject();
                 })
+                .catch(err => fn.notificationToastError(err))
                 .finally(() => {
                     loadingBar.removeAttribute("indeterminate");
                 });
             });
         };
 
-        // Register update function to be accessible outside of es6 module (see <script> below)
-        window.fn.updateMapPage = updateMapPage;
-        window.fn.cancelUpdateMap = () => {
-            if (map !== null) {
-                map.closeWebSocket();
-            }
+        window.fn.testMap = function(url) { 
+            updateMapPage(true).then(map => {
+                setTimeout(_ => {
+                    fn.prequest(url, "GET", "arraybuffer")
+                    .then(gzippedMapData => {
+                        map.updateMap(map.parseMap(gzippedMapData));
+                    });
+                },1e3);
+            })
         };
 
         /**
@@ -105,13 +123,33 @@
         };
 
         /**
-         * Calls the zoned_cleanup api route with the currently set zone
+         * Calls the zoned cleanup api route with the currently set zones
          */
         function zoned_cleanup(zones) {
             let button = document.getElementById("start_cleaning");
             loadingBar.setAttribute("indeterminate", "indeterminate");
             button.setAttribute("disabled", "disabled");
             fn.prequestWithPayload("api/start_cleaning_zone", JSON.stringify(zones), "PUT")
+            .then(
+                (res) => fn.notificationToastOK(),
+                (err) => fn.notificationToastError(err)
+            )
+            .finally(() => {
+                loadingBar.removeAttribute("indeterminate");
+                button.removeAttribute("disabled");
+            });
+        };
+
+        /**
+         * Calls the segmented cleanup api route with the currently chosen segments
+         */
+        function segmented_cleanup(segments) {
+            let button = document.getElementById("start_cleaning"),
+                iterations = parseInt(document.getElementById("set_iterations_segment_number").textContent);
+            if (!(iterations > 0 && iterations <= 3)) { iterations = 1; }
+            loadingBar.setAttribute("indeterminate", "indeterminate");
+            button.setAttribute("disabled", "disabled");
+            fn.prequestWithPayload("api/start_cleaning_segment", JSON.stringify([segments, iterations]), "PUT")
             .then(
                 (res) => fn.notificationToastOK(),
                 (err) => fn.notificationToastError(err)
@@ -143,7 +181,7 @@
 
         window.fn.reload_map_buttons = function(res) {
             res = res || document.querySelector('.map-page-status').dataset;
-            if (res.in_cleaning === 1 || res.in_cleaning === 2 || res.state === 11 || res.state === 16) {
+            if (res.in_cleaning > 0 || res.state === 11 || res.state === 16) {
                 if ([2,3,10].includes(res.state)) {
                     document.getElementById("pause_cleaning").style.display = 'none';
                     document.getElementById("start_cleaning").style.display = '';
@@ -165,8 +203,8 @@
                     document.getElementById("start_cleaning").style.display = 'none';
                 }
             }
-            // resume available in paused and charger disconnected while in zoned cleaning states
-            if (res.state === 10 || (res.state === 2 && res.in_cleaning === 2)) {
+            // resume available in paused and charger disconnected while in zoned/segment cleaning states
+            if (res.state === 10 || (res.state === 2 && res.in_cleaning > 1)) {
                 document.getElementById("resume_cleaning").style.display = '';
             } else {
                 document.getElementById("resume_cleaning").style.display = 'none';
@@ -205,9 +243,11 @@
             if(gotoPoint) goto_point(gotoPoint);
         }
         document.getElementById("start_cleaning").onclick = () => {
+            const segments = map.getLocations().segments;
             const zones = map.getLocations().zones;
-            const res = document.querySelector('.map-page-status').dataset;
-            if (zones.length) {
+            if (segments.length) {
+                segmented_cleanup(segments);
+            } else if (zones.length) {
                 zoned_cleanup(zones);
             } else {
                 ons.notification.confirm(i18next.t('map.confirmFullCleaning',"Can't start zoned cleaning: no zones specified. Do you want to run full cleaning instead?"),{buttonLabels: [i18next.t('common.cancel',"Cancel"), i18next.t('common.ok',"OK")], title: i18next.t('common.confirm',"Confirm")}).then(function (answer) {
@@ -220,7 +260,7 @@
         document.getElementById("resume_cleaning").onclick = () => {
             const zones = map.getLocations().zones;
             const res = document.querySelector('.map-page-status').dataset;
-            if (+res.state === 10 || (+res.state === 2 && +res.in_cleaning === 2)) {
+            if (+res.state === 10 || (+res.state === 2 && +res.in_cleaning > 1)) {
                 if (+res.in_returning === 1) {
                     put_command("drive_home","resume_cleaning");
                     return;
@@ -244,6 +284,15 @@
         document.getElementById("set_iterations").onclick = () => {
             map.addIterationsToZone();
         }
+        document.getElementById("set_iterations_segment").onclick = () => {
+            let iterationsSpan = document.getElementById("set_iterations_segment_number"),
+                iterationsSpanValue = +iterationsSpan.textContent;
+            if (iterationsSpanValue >= 3) {
+                iterationsSpan.textContent = 1;
+            } else {
+                iterationsSpan.textContent = ++iterationsSpanValue;
+            }
+        }
         document.getElementById("promote_zone").onclick = () => {
             map.promoteCurrentZone();
         }
@@ -256,7 +305,11 @@
         document.getElementById("map-canvas").addEventListener('zoneSelection', (e) => {
             document.getElementById("promote_zone").style.display = e.detail.nf ? "" : "none";
             document.getElementById("set_iterations").style.display = e.detail.state ? "" : "none";
+            document.getElementById("set_iterations_segment").style.display = e.detail.state || !map.getLocations().segments.length ? "none" : "";
             document.getElementById("add_zone").style.display = e.detail.state ? "none" : "";
+        });
+        document.getElementById("map-canvas").addEventListener('segmentSelection', (e) => {
+            document.getElementById("set_iterations_segment").style.display = map.getLocations().segments.length ? "" : "none";
         });
         document.getElementById("map-canvas").addEventListener('updateStatus', (e) => {
             let res = e.detail;
@@ -270,47 +323,44 @@
                 mapPageStatus.dataset['state'] = res['state'];
                 mapPageStatus.dataset['in_cleaning'] = res['in_cleaning'];
                 mapPageStatus.dataset['in_returning'] = res['in_returning'];
-                if (!window.fn.webifSettings.staticMapButtons) {
-                    window.fn.reload_map_buttons(res);
+                if (!fn.webifSettings.staticMapButtons) {
+                    fn.reload_map_buttons(res);
                 }
             }
         });
-        document.dispatchEvent(new CustomEvent("mapModuleLoaded", {detail: true}));
-    </script>
-    <script>
-        // this is a workaround for an issue with module script fails to load fast enough even when this script is marked defer. any better idea?
-        var mapModuleLoaded = new Promise((res,rej) => {
-            document.addEventListener("mapModuleLoaded", function(e) { res(); });
-        }).catch(e => console.log('map functions failed loading', e));
-        // Somehow getScriptPage returns null inside the type=module script tag
+
         ons.getScriptPage().onInit = function() {
             fn.localize('#map-page');
         }
         ons.getScriptPage().onShow = function () {
-            document.querySelector('.map-page-stats').style.display = window.fn.webifSettings.hideMapStatus ? 'none' : '';
-            document.getElementById('map_reload_button').style.display = window.fn.webifSettings.hideMapReload ? 'none' : '';
+            document.querySelector('.map-page-stats').style.display = fn.webifSettings.hideMapStatus ? 'none' : '';
+            document.getElementById('map_reload_button').style.display = fn.webifSettings.hideMapReload ? 'none' : '';
             document.querySelectorAll('.map-page-buttons').forEach(e => (e.style.display = ''));
-            mapModuleLoaded.then(res => {
-                window.fn.updateMapPage().catch(() => {});
-                window.fn.prequest("api/poll_map").then(null, (err) => fn.notificationToastError(err));
-                if (!window.fn.webifSettings.staticMapButtons) {
-                    window.fn.reload_map_buttons();
-                } else {
-                    window.fn.reset_map_buttons();
-                }
-            });
+
+            updateMapPage();
+
+            fn.prequest("api/poll_map").then(null, (err) => fn.notificationToastError(err));
+            if (!fn.webifSettings.staticMapButtons) {
+                fn.reload_map_buttons();
+            } else {
+                fn.reset_map_buttons();
+            }
         };
         ons.getScriptPage().onHide = function () {
-            window.fn.cancelUpdateMap();
+            if (map !== null) {
+                map.closeWebSocket();
+            }
         };
+
     </script>
     <style>
         :root {
             --map-background-1: #33a1f5;
             --map-background-2: #046cd4;
-            --map-free: #56affc;
-            --map-occupied: #b3edff;
-            --map-strong-occupied: #a1dbff;
+            --map-free: #1f97ff;
+            --map-occupied: #a1dbff;
+            --map-segment: #56affc;
+            --map-segment-border: #1f97ff;
             --path: #ffffff;
         }
 
@@ -328,6 +378,7 @@
         canvas#zone-configuration-map,
         canvas#spot-configuration-map,
         canvas#forbidden-markers-configuration-map,
+        canvas#segments-configuration-map,
         canvas#cleaning-history-map {
             height: 100%;
             width: 100%;
@@ -353,6 +404,10 @@
             grid-template-columns: auto;
             grid-template-rows: auto;
             grid-gap: 0.5em;
+        }
+
+        .map-page-buttons ons-fab.fab[disabled] {
+            background-color: rgba(255,255,255,0.7);
         }
 
         .map-page-top {
