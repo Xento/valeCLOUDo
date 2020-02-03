@@ -130,34 +130,35 @@
 
         function getRobots() {
             loadingBarSettingsSmarthomeapi.setAttribute("indeterminate", "indeterminate");
-            fn.prequest("api/get_smarthomeapi_robots").then(
+            fn.notificationToastOK("Logging in and getting connected robots.");
+            
+            const myNode = settingsSmarthomeapiRobot.getElementsByClassName('select-input')[0];
+            while (myNode.firstChild) {
+                myNode.removeChild(myNode.firstChild);
+            }
+
+            fn.prequestWithPayload("api/get_smarthomeapi_robots", JSON.stringify({
+                "username": settingsSmarthomeapiUsername.value.trim() || '',
+                "password": settingsSmarthomeaoiPassword.value.trim() || ''
+                }), "POST").then(
                 (res) => {
-
-                    const myNode = settingsSmarthomeapiRobot.getElementsByClassName('select-input')[0];
-                    while (myNode.firstChild) {
-                        myNode.removeChild(myNode.firstChild);
-                    }
-
                     res.forEach(function(robo){ 
+                        var serverKey = Object.keys(JSON.parse(robo.event['prop.s_mixxx']));
 
-                    var serverKey = Object.keys(JSON.parse(robo.event['prop.s_mixxx']));
+                        const option = document.createElement('option');
+                        option.innerText = robo.name;
+                        option.value = JSON.stringify({
+                            roboname: robo.name,
+                            deviceip: robo.localip,
+                            deviceId: robo.did,
+                            token: res[0].token
+                        });
+                        settingsSmarthomeapiRobot.getElementsByClassName('select-input')[0].appendChild(option);
 
-                    const option = document.createElement('option');
-                    option.innerText = robo.name;
-                    option.value = JSON.stringify({
-                        roboname: robo.name,
-                        deviceip: robo.localip,
-                        deviceId: robo.did,
-                        token: res[0].token,
-                        server: JSON.parse(robo.event['prop.s_mixxx'])[serverKey]
+                        settingsSmarthomeapiDID.value = robo.did;
+                        settingsSmarthomeapiToken.value = robo.token;
+                        settingsSmarthomeapiIP.value = robo.localip;
                     });
-                    settingsSmarthomeapiRobot.getElementsByClassName('select-input')[0].appendChild(option);
-
-                    settingsSmarthomeapiDID.value = robo.did;
-                    settingsSmarthomeapiToken.value = robo.token;
-                    settingsSmarthomeapiIP.value = robo.localip;
-                    settingsSmarthomeapiServer.value = JSON.parse(robo.event['prop.s_mixxx'])[serverKey];
-                });
                 },
                 (err) => fn.notificationToastError(err)
             ).finally(loadingBarSettingsSmarthomeapi.removeAttribute("indeterminate"));
@@ -184,7 +185,7 @@
                 "deviceId": settingsSmarthomeapiDID.value.trim() || '',
                 "token": settingsSmarthomeapiToken.value.trim() || '',
                 "deviceip": settingsSmarthomeapiIP.value.trim() || '',
-                "server": sel2.options[sel2.selectedIndex].value.trim() || '',
+                "server": settingsSmarthomeapiServer.value.trim() || '',
                 "roboname": sel.options[sel.selectedIndex].text.trim() || ''
             }), "PUT")
             .then((res) => fn.notificationToastOK(i18next.t('common.ok',"OK")),(err) => fn.notificationToastError(err))
