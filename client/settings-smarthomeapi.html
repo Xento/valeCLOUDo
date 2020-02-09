@@ -1,0 +1,195 @@
+<ons-page id="settings-smarthomeapi-page">
+    <ons-toolbar>
+        <div class="left">
+            <ons-back-button data-i18n="settings.title" data-i18n-target=".back-button__label">Settings</ons-back-button>
+        </div>
+        <div class="center" data-i18n="settings.smarthomeapiTitle">Xiaomi Cloud</div>
+        <div class="right">
+        </div>
+    </ons-toolbar>
+    <ons-list-title style="margin-top:5px;" data-i18n="settings.smarthomeapi.general">Xiaomi Cloud settings</ons-list-title>
+    <ons-progress-bar id="loading-bar-settings-smarthomeapi" value="0" indeterminate="indeterminate"></ons-progress-bar>
+    <ons-list>
+        <ons-list-item>
+            <div data-i18n="settings.smarthomeapi.username" class="left">
+                Username:
+            </div>
+            <div class="center" style="width:90%;">
+                <ons-input id="settings-smarthomeapi-username" class="switchable-input" type="text" float maxlength="63" placeholder="username" style="width:100%;" data-i18n="[placeholder]settings.smarthomeapi.usernamePlaceholder"></ons-input>
+            </div>
+        </ons-list-item>
+        <ons-list-item>
+            <div data-i18n="settings.smarthomeapi.authPassword" class="left">
+                Password:
+            </div>
+            <div class="center" style="width:90%;">
+                <ons-input id="settings-smarthomeapi-password" class="switchable-input" type="password" float maxlength="20" placeholder="password" style="width:100%;" data-i18n="[placeholder]settings.smarthomeapi.authPasswordPlaceholder"></ons-input>
+            </div>
+        </ons-list-item>
+        <ons-list-item>
+            <div data-i18n="settings.smarthomeapi.server" class="left">
+                Server:
+            </div>
+            <div class="center" style="width:90%;">
+                <ons-select id="settings-smarthomeapi-server" class="choose-sel2"  float maxlength="63" placeholder="select Server" style="width:90%;" data-i18n="[placeholder]settings.smarthomeapi.serverPlaceholder">
+                    <option value="de">Germany</option>
+                    <option value="sg">China</option>
+                </ons-select>
+            </div>
+        </ons-list-item>
+        <ons-list-item>
+            <div data-i18n="settings.smarthomeapi.robot" class="left">
+                Roborock:
+            </div>
+            <div class="center" style="width:90%;">
+                <ons-select id="settings-smarthomeapi-robot" class="choose-sel" onchange="editSelects(event)" float maxlength="63" placeholder="select robot" style="width:90%;" data-i18n="[placeholder]settings.smarthomeapi.robotPlaceholder"></ons-select>
+            </div>
+            <div class="right">
+                <ons-button modifier="large" class="button-margin switchable-input" onclick="getRobots();" data-i18n="settings.smarthomeapi.getRobots">Get robots</ons-button>
+            </div>
+        </ons-list-item>
+        <ons-list-item>
+            <div data-i18n="settings.smarthomeapi.deviceid" class="left">
+                DeviceId:
+            </div>
+            <div class="center" style="width:90%;">
+                <ons-input id="settings-smarthomeapi-deviceid" readonly class="switchable-input" type="text" float maxlength="20" placeholder="deviceid" style="width:100%;" data-i18n="[placeholder]settings.smarthomeapi.deviceid"></ons-input>
+            </div>
+        </ons-list-item>
+        <ons-list-item>
+            <div data-i18n="settings.smarthomeapi.token" class="left">
+                Token:
+            </div>
+            <div class="center" style="width:90%;">
+                <ons-input id="settings-smarthomeapi-token" readonly class="switchable-input" type="text" float maxlength="20" placeholder="token" style="width:100%;" data-i18n="[placeholder]settings.smarthomeapi.tokenPlaceholder"></ons-input>
+            </div>
+        </ons-list-item>
+        <ons-list-item>
+            <div data-i18n="settings.smarthomeapi.ip" class="left">
+                IP-Address:
+            </div>
+            <div class="center" style="width:90%;">
+                <ons-input id="settings-smarthomeapi-ip" readonly class="switchable-input" type="text" float maxlength="20" placeholder="192.168.xxx.xxx" style="width:100%;" data-i18n="[placeholder]settings.smarthomeapi.ipPlaceholder"></ons-input>
+            </div>
+        </ons-list-item>
+    </ons-list>
+    <ons-list-item>
+        <div class="center">
+            <ons-button modifier="large" class="button-margin" data-i18n="common.save" onclick="setSettingsSmarthomeapiPage();">Save</ons-button>
+        </div>
+    </ons-list-item>
+    <script>
+        var loadingBarSettingsSmarthomeapi = document.getElementById('loading-bar-settings-smarthomeapi');
+        var settingsSmarthomeapiUsername = document.getElementById('settings-smarthomeapi-username');
+        var settingsSmarthomeaoiPassword = document.getElementById('settings-smarthomeapi-password');
+        var settingsSmarthomeapiRobot = document.getElementById('settings-smarthomeapi-robot');
+        var settingsSmarthomeapiDID = document.getElementById('settings-smarthomeapi-deviceid');
+        var settingsSmarthomeapiToken = document.getElementById('settings-smarthomeapi-token');
+        var settingsSmarthomeapiIP = document.getElementById('settings-smarthomeapi-ip');
+        var settingsSmarthomeapiServer = document.getElementById('settings-smarthomeapi-server');
+
+        ons.getScriptPage().onInit = function() {
+            fn.localize('#settings-smarthomeapi-page');
+        };
+
+        ons.getScriptPage().onShow = function () {
+            getSettingsSmarthomeapiPage();
+        };
+
+        function getSettingsSmarthomeapiPage() {
+            loadingBarSettingsSmarthomeapi.setAttribute("indeterminate", "indeterminate");
+            fn.prequest("api/get_smarthomeapi_config")
+            .then((res) => {
+   
+                settingsSmarthomeapiUsername.value = res.username;
+                settingsSmarthomeaoiPassword.value =  res.password;
+
+                settingsSmarthomeapiDID.value = res.deviceId;
+                settingsSmarthomeapiToken.value = res.token;
+                settingsSmarthomeapiIP.value = res.deviceip;
+                settingsSmarthomeapiServer.value = res.server;
+
+                const option = document.createElement('option');
+                option.innerText = res.roboname;
+                option.value = JSON.stringify({
+                    name: res.roboname,
+                    deviceip: res.deviceip,
+                    deviceId: res.deviceId,
+                    token: res.token,
+                    server: res.server
+                });
+                settingsSmarthomeapiRobot.getElementsByClassName('select-input')[0].appendChild(option);
+
+            },(err) => fn.notificationToastError(err))
+            .finally(loadingBarSettingsSmarthomeapi.removeAttribute("indeterminate"));
+        }
+
+        function switchControls() {
+            document.querySelectorAll('.switchable-input').forEach(element => settingsTelegramEnabled.checked ? element.removeAttribute('disabled') : element.setAttribute('disabled','disabled'));
+        }
+
+        function getRobots() {
+            loadingBarSettingsSmarthomeapi.setAttribute("indeterminate", "indeterminate");
+            fn.notificationToastOK("Logging in and getting connected robots.");
+            
+            const myNode = settingsSmarthomeapiRobot.getElementsByClassName('select-input')[0];
+            while (myNode.firstChild) {
+                myNode.removeChild(myNode.firstChild);
+            }
+
+            fn.prequestWithPayload("api/get_smarthomeapi_robots", JSON.stringify({
+                "username": settingsSmarthomeapiUsername.value.trim() || '',
+                "password": settingsSmarthomeaoiPassword.value.trim() || ''
+                }), "POST").then(
+                (res) => {
+                    res.forEach(function(robo){ 
+                        var serverKey = Object.keys(JSON.parse(robo.event['prop.s_mixxx']));
+
+                        const option = document.createElement('option');
+                        option.innerText = robo.name;
+                        option.value = JSON.stringify({
+                            roboname: robo.name,
+                            deviceip: robo.localip,
+                            deviceId: robo.did,
+                            token: res[0].token
+                        });
+                        settingsSmarthomeapiRobot.getElementsByClassName('select-input')[0].appendChild(option);
+
+                        settingsSmarthomeapiDID.value = robo.did;
+                        settingsSmarthomeapiToken.value = robo.token;
+                        settingsSmarthomeapiIP.value = robo.localip;
+                    });
+                },
+                (err) => fn.notificationToastError(err)
+            ).finally(loadingBarSettingsSmarthomeapi.removeAttribute("indeterminate"));
+        }
+
+        function editSelects(event) {
+            document.getElementById('choose-sel').removeAttribute('modifier');
+
+            var json = JSON.parse(event.target.value)
+            settingsSmarthomeapiDID.value = json.deviceId;
+            settingsSmarthomeapiToken =  json.token;
+            settingsSmarthomeapiIP.value = json.deviceip;
+            settingsSmarthomeapiServer.value = json.server;
+        }
+
+        function setSettingsSmarthomeapiPage() {
+            loadingBarSettingsSmarthomeapi.setAttribute("indeterminate", "indeterminate");
+
+            var sel = settingsSmarthomeapiRobot.getElementsByClassName('select-input')[0];
+            var sel2 = settingsSmarthomeapiServer.getElementsByClassName('select-input')[0];
+            fn.prequestWithPayload("api/set_smarthomeapi_config", JSON.stringify({
+                "username": settingsSmarthomeapiUsername.value.trim() || '',
+                "password": settingsSmarthomeaoiPassword.value.trim() || '',
+                "deviceId": settingsSmarthomeapiDID.value.trim() || '',
+                "token": settingsSmarthomeapiToken.value.trim() || '',
+                "deviceip": settingsSmarthomeapiIP.value.trim() || '',
+                "server": settingsSmarthomeapiServer.value.trim() || '',
+                "roboname": sel.options[sel.selectedIndex].text.trim() || ''
+            }), "PUT")
+            .then((res) => fn.notificationToastOK(i18next.t('common.ok',"OK")),(err) => fn.notificationToastError(err))
+            .finally(() => getSettingsSmarthomeapiPage());
+        }
+    </script>
+</ons-page>

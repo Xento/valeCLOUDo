@@ -43,6 +43,10 @@
         <div class="title"><ons-icon icon="fa-telegram"></ons-icon> <span data-i18n="settings.telegramTitle">Telegram Bot</span></div>
         <div class="content" data-i18n="settings.telegramDesc">Enable and configure Telegram bot settings</div>
     </ons-card>
+    <ons-card onclick="fn.pushPage({'id': 'settings-smarthomeapi.html', 'title': 'Xiaomi Cloud'})">
+        <div class="title"><ons-icon icon="fa-lock"></ons-icon> <span data-i18n="settings.smarthomeapiTitle">Xiaomi Cloud</span></div>
+        <div class="content" data-i18n="settings.smarthomeapiDesc">Enter Xiaomi Cloud credentials and select robot</div>
+    </ons-card>
     <script>
         ons.getScriptPage().onInit = function() {
            fn.localize('#settings-page');
