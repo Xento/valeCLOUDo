@@ -20,6 +20,15 @@
 						<option value="5" data-i18n="home.fanspeedPresets.mop">Mop</option>
 					</ons-select></ons-col>
 				</ons-row>
+				<ons-row class="wtimer-item">
+					<ons-col width="100px" align="center" data-i18n="settings.timers.waterGrade">Water Grade:</ons-col>
+					<ons-col align="left"><ons-select select-id="water_grade_select">
+						<option value="0" data-i18n="home.waterGradePresets.off">Off</option>
+						<option value="1" data-i18n="home.waterGradePresets.low">Low</option>
+						<option value="2" data-i18n="home.waterGradePresets.medium">Medium</option>
+						<option value="3" data-i18n="home.waterGradePresets.high">High</option>
+					</ons-select></ons-col>
+				</ons-row>
 				<ons-row class="ntimer-item">
 					<ons-col width="100px" align="center" data-i18n="settings.timers.iterations">Iterations:</ons-col>
 					<ons-col align="left"><ons-select select-id="iterations_select">
@@ -30,12 +39,12 @@
 				</ons-row>
 				<ons-row class="ntimer-item">
 					<ons-col width="100px" align="center" data-i18n="settings.timers.segments">Segments:</ons-col>
-					<ons-col align="left"><ons-button modifier="quiet" id="add_segment" class="button-margin" onclick="addSegmentClick()"><ons-icon icon="fa-plus"></ons-icon> <span data-i18n="settings.timers.addSegments">Add...</span></ons-button></ons-col>
+					<ons-col align="left"><ons-button modifier="quiet" id="add_segment" class="button-margin" onclick="addSegmentClick()"><ons-icon icon="fa-plus"></ons-icon> <span data-i18n="settings.timers.addSegments">Add...</span></ons-button> <ons-button modifier="quiet" class="button-margin" onclick="previewSegmentIndexesClick()"><ons-icon icon="fa-search"></ons-icon></ons-button></ons-col>
 				</ons-row>
 				<ons-row class="ntimer-item" id="segment-ids"></ons-row>
 				<ons-row class="ztimer-item">
 					<ons-col width="100px" align="center" data-i18n="settings.timers.zones">Zones:</ons-col>
-					<ons-col align="left"><ons-button modifier="quiet" id="add_coordinates" class="button-margin" onclick="addZoneCoordinatesClick()"><ons-icon icon="fa-plus"></ons-icon> <span data-i18n="settings.timers.addZones">Add...</span></ons-button></ons-col>
+					<ons-col align="left"><ons-button modifier="quiet" id="add_coordinates" class="button-margin" onclick="addZoneCoordinatesClick()"><ons-icon icon="fa-plus"></ons-icon> <span data-i18n="settings.timers.addZones">Add...</span></ons-button> <ons-button modifier="quiet" class="button-margin" onclick="previewZoneCoordinatesClick()"><ons-icon icon="fa-search"></ons-icon></ons-button></ons-col>
 				</ons-row>
 				<ons-row class="ztimer-item" id="zone-coordinates"></ons-row>
 				<hr>
@@ -152,13 +161,13 @@
 	</ons-toolbar>
 	<ons-progress-bar id="loading-bar-settings-timers" value="0" indeterminate="indeterminate"></ons-progress-bar>
 	<ons-list-title style="margin-top:5px;">
-		<span data-i18n="settings.timers.zonedCleaningHeader">Zoned Cleaning Schedule (beta)</span> <ons-toolbar-button id="settings-timers-create-new-timer" onclick="showTimerDialog(null,true);"><ons-icon icon="fa-plus"></ons-icon></ons-toolbar-button></div>
+		<span data-i18n="settings.timers.zonedCleaningHeader">Zoned Cleaning Schedule</span> <ons-toolbar-button id="settings-timers-create-new-timer" onclick="showTimerDialog(null,true);"><ons-icon icon="fa-plus"></ons-icon></ons-toolbar-button>
 	</ons-list-title>
 	<ons-list id="settings-zoned-timers-timer-list">
 		<ons-list-item data-i18n="settings.timers.noZonedCleaningSchedule" data-i18n-target=".list-item__center">No zoned cleaning schedule is configured yet.</ons-list-item>
 	</ons-list>
 	<ons-list-title style="margin-top:5px;">
-		<span data-i18n="settings.timers.cleaningHeader">Cleaning Schedule</span> <ons-toolbar-button id="settings-timers-create-new-timer" onclick="showTimerDialog(null);"><ons-icon icon="fa-plus"></ons-icon></ons-toolbar-button></div>
+		<span data-i18n="settings.timers.cleaningHeader">Cleaning Schedule</span> <ons-toolbar-button id="settings-timers-create-new-timer" onclick="showTimerDialog(null);"><ons-icon icon="fa-plus"></ons-icon></ons-toolbar-button>
 	</ons-list-title>
 	<ons-list id="settings-timers-timer-list">
 		<ons-list-item data-i18n="settings.timers.noCleaningSchedule" data-i18n-target=".list-item__center">No cleaning schedule is configured yet.</ons-list-item>
@@ -198,10 +207,6 @@
 				coords = Array.from(coordInputs).map(a => JSON.parse(a.value)).reduce((acc, val) => acc.concat(val), []);
 			}
 			coords = coords.concat(coordinates);
-			if (coords.length > 5) {
-				fn.notificationToastError(i18next.t('settings.timers.tooManyZones',"You can't use more than 5 zones in one cleaning session."));
-				return;
-			}
 			let anchor = document.querySelector('#add-timer-form > hr');
 			anchor.parentNode.insertBefore(ons.createElement(
 				'<ons-row><ons-col width="100px" class="delete-field-link" onclick="removeTimerLocation(this);">[x] (' + (i18next.t('settings.timers.zoneCount',{defaultValue: "{{count}} zone" + (coordinates.length !== 1 ? "s" : ""), count: coordinates.length})) + ')</ons-col><ons-col><ons-input type="hidden" name="zoned_timer_coords[]" value="' + JSON.stringify(coordinates) + '" disabled>' + name + '</ons-col></ons-row>'
@@ -239,6 +244,32 @@
 			});
 		};
 
+		function previewZoneCoordinatesClick() {
+			const form = document.getElementById('add-timer-form');
+			let coords = [], coordInputs = form.querySelectorAll("input[name='zoned_timer_coords[]']");
+			if (coordInputs.length) {
+				coords = Array.from(coordInputs).map(a => JSON.parse(a.value)).reduce((acc, val) => acc.concat(val), []);
+			}
+			loadingBarSettingsTimers.setAttribute("indeterminate", "indeterminate");
+			fn.prequest("api/map/latest", "GET", "arraybuffer")
+			.then(mapData => {
+				fn.pushPage({
+					'id': 'settings-timers-map.html',
+					'title': 'Zoned Timers map preview',
+					'data': {
+						'map': mapData,
+						'timerName': form.timer_name.value || '',
+						'timerType': 'zones',
+						'timerCoords': coords
+					}
+				});
+			})
+			.catch((err) => {
+				if (err !== "ok") fn.notificationToastError(err);
+			})
+			.finally(() => loadingBarSettingsTimers.removeAttribute("indeterminate"));
+		};
+
 		function getActualSegments() {
 			var segmentNames = {};
 			return fn.prequest("api/segment_names")
@@ -258,7 +289,7 @@
 
 		function addSegment(name,id) {
 			let ids = [], idInputs = document.querySelectorAll("#add-timer-form input[name='segment_timer_id[]']");
-			if (idInputs.length) {				
+			if (idInputs.length) {
 				idInputs.forEach(input => ids.push(+input.value));
 			}
 			if (ids.includes(id)) { fn.notificationToastError(i18next.t('settings.timers.duplicatedSegment',"You can't add the same room multiple times!")); return; }
@@ -300,6 +331,41 @@
 			});
 		};
 
+		function previewSegmentIndexesClick() {
+			const form = document.getElementById('add-timer-form');
+			let iterations = +form.iterations_select.value || 1;
+			let segments = [], segmentInputs = form.querySelectorAll("input[name='segment_timer_id[]']");
+			if (segmentInputs.length) {
+				segmentInputs.forEach(input => segments.push(+input.value));
+			}
+			loadingBarSettingsTimers.setAttribute("indeterminate", "indeterminate");
+			let mapData, segmentNames = {};
+			fn.prequest("api/map/latest", "GET", "arraybuffer")
+			.then(res => {
+				mapData = res;
+				return fn.prequest("api/segment_names");
+			})
+			.then(res => {
+				res.forEach(pair => segmentNames[pair[0]] = pair[1]);
+				fn.pushPage({
+					'id': 'settings-timers-map.html',
+					'title': 'Zoned Timers map preview',
+					'data': {
+						'map': mapData,
+						'timerName': form.timer_name.value || '',
+						'timerType': 'rooms',
+						'timerSegments': segments,
+						'timerSegmentNames': segmentNames,
+						'timerSegmentIterations': iterations
+					}
+				});
+			})
+			.catch((err) => {
+				if (err !== "ok") fn.notificationToastError(err);
+			})
+			.finally(() => loadingBarSettingsTimers.removeAttribute("indeterminate"));
+		};
+
 		function switchTimerOnce(elem) {
 			document.querySelectorAll('ons-checkbox[name="days"]').forEach(cb => {
 				if (elem.checked) {
@@ -317,10 +383,10 @@
 		function showTimeZoneDialog() {
 			loadingBarSettingsTimers.setAttribute("indeterminate", "indeterminate");
 			let currentTimeZone, promises = [];
-			promises.push(fn.prequest("api/get_timezone").then(res => (currentTimeZone = res)));
+			promises.push(fn.prequest("api/timezone").then(res => (currentTimeZone = res)));
 			let timeZoneSelection = document.getElementById('timezone-selection');
 			if (!timeZoneSelection.childElementCount) {
-				promises.push(fn.prequest("api/get_timezone_list").then(res => {
+				promises.push(fn.prequest("api/timezone_list").then(res => {
 					res.forEach(function (timezone) {
 						let option = document.createElement("option");
 						option.innerText = timezone;
@@ -350,7 +416,7 @@
 			ons.notification.confirm(i18next.t('settings.timers.confirmTimezone',{defaultValue: "Do you really want to set your timezone to \"{{newTimezone}}\"?", newTimezone: newTimezone}),{title: i18next.t('common.confirm',"Confirm"), buttonLabels: [i18next.t('common.cancel',"Cancel"), i18next.t('common.ok',"OK")]}).then(function (answer) {
 				if (answer === 1) {
 					loadingBarSettingsTimers.setAttribute("indeterminate", "indeterminate");
-					fn.prequestWithPayload("api/set_timezone", JSON.stringify({ new_zone : newTimezone }), "POST")
+					fn.prequestWithPayload("api/timezone", JSON.stringify({ new_zone : newTimezone }), "PUT")
 					.then(
 						(res) => editTimezoneDialog.hide(),
 						(err) => fn.notificationToastError(err)
@@ -380,7 +446,7 @@
 
 		function updateDndTimerPage() {
 			loadingBarSettingsTimers.setAttribute("indeterminate", "indeterminate");
-			fn.prequest("api/get_dnd")
+			fn.prequest("api/dnd")
 			.then((res) => {
 				while (dndTimerList.lastElementChild !== dndTimerList.firstElementChild) {
 					dndTimerList.removeChild(dndTimerList.lastElementChild);
@@ -424,7 +490,7 @@
 			ons.notification.confirm(i18next.t('settings.timers.confirmDisableDND',"Do you really want to disable DND?"),{title: i18next.t('common.confirm',"Confirm"), buttonLabels: [i18next.t('common.cancel',"Cancel"), i18next.t('common.ok',"OK")]}).then(function (answer) {
 				if (answer === 1) {
 					loadingBarSettingsTimers.setAttribute("indeterminate", "indeterminate");
-					fn.prequest("api/delete_dnd", "PUT")
+					fn.prequest("api/dnd", "DELETE")
 					.then(
 						(res) => updateDndTimerPage(),
 						(err) => fn.notificationToastError(err)
@@ -440,7 +506,7 @@
 			var end_hour = document.getElementById('edit-dnd-form').end_hour.value;
 			var end_minute = document.getElementById('edit-dnd-form').end_minute.value;
 			if (start_hour && start_minute && end_hour && end_minute) {
-				fn.prequestWithPayload("api/set_dnd", JSON.stringify({ start_hour, start_minute, end_hour, end_minute}), "POST")
+				fn.prequestWithPayload("api/dnd", JSON.stringify({ start_hour, start_minute, end_hour, end_minute}), "PUT")
 				.then((res) => {
 					hideDndTimerDialog();
 					updateDndTimerPage();
@@ -542,6 +608,18 @@
 			});
 		}
 
+		function clearCoordinatesAndIndexes() {
+			let inputs = document.getElementById('add-timer-form').querySelectorAll("input[name='zoned_timer_coords[]'], input[name='segment_timer_id[]'");
+			if (inputs.length) {
+				inputs.forEach(a => {
+					while (a.parentNode && a.nodeName !== "ONS-ROW") { a = a.parentNode; };
+					if (a) {
+						a.parentNode.removeChild(a);
+					}
+				});
+			}
+		}
+
 		function clearTimerDialog(zoned) {
 			let form = document.getElementById('add-timer-form');
 			form.zoned.value = zoned ? 1 : 0;
@@ -558,15 +636,72 @@
 			}
 			form.once.checked = false;
 			switchTimerOnce(form.once);
-			let inputs = form.querySelectorAll("input[name='zoned_timer_coords[]'], input[name='segment_timer_id[]'");
-			if (inputs.length) {
-				inputs.forEach(a => {
-					while (a.parentNode && a.nodeName !== "ONS-ROW") { a = a.parentNode; };
-					if (a) {
-						a.parentNode.removeChild(a);
+			clearCoordinatesAndIndexes();
+		}
+
+		function formatZoneCoordinates(coordinates) {
+			console.log('raw coordinates:',JSON.stringify(coordinates));
+			loadingBarSettingsTimers.setAttribute("indeterminate","indeterminate");
+			fn.prequest("api/zones")
+			.then(zones => {
+				if (zones && zones.length) {
+					clearCoordinatesAndIndexes();
+					zones.sort((a,b) => b.coordinates.length - a.coordinates.length);
+					let szcmp = (subzone,coords) => {
+						for (let i = 0; i < 4; i++) {
+							if (coords[i] !== subzone[i]) return false;
+						}
+						return true;
 					}
-				});
-			}
+					let i, j, k, len, len2, len3, found, currentCoords = [];
+					timerLoop:
+					for (i = 0, len = coordinates.length; i < len; i++) {
+						zonesLoop:
+						for (j = 0, len2 = zones.length; j < len2; j++) {
+							len3 = zones[j].coordinates.length;
+							if (i + len3 <= len) {
+								found = 0;
+								if (zones[j].coordinates.every((subzone,idx) => szcmp(subzone,coordinates[i+idx]))) {
+									found = 1;
+								} else if (zones[j].coordinates.every(subzone => coordinates.slice(i,i+len3).some(coords => szcmp(subzone,coords)))) {
+									found = 2;
+								}
+								if (found) {
+									if (currentCoords.length) {
+										addZoneCoordinates('-',currentCoords);
+										currentCoords = [];
+									}
+									addZoneCoordinates(zones[j].name + (found > 1 ? ' ⇆' : ''),coordinates.slice(i,i+len3));
+									i += len3 - 1;
+									continue timerLoop;
+								}
+							}
+						}
+						currentCoords.push(coordinates[i]);
+					}
+					if (currentCoords.length) {
+						addZoneCoordinates('-',currentCoords);
+					}
+				}
+			})
+			.catch(err => fn.notificationToastError(err))
+			.finally(() => {
+				loadingBarSettingsTimers.removeAttribute("indeterminate");
+			});
+		}
+
+		function formatSegmentIndexes(indexes) {
+			loadingBarSettingsTimers.setAttribute("indeterminate", "indeterminate");
+			getActualSegments()
+			.then(res => {
+				indexes.forEach(id => {
+					addSegment((res.find(r => r.id === +id) || '').name || (i18next.t('settings.timers.missingSegment',"Segment not found on current map!") + ' (#' + id + ')'),id);
+				})
+			})
+			.catch(err => fn.notificationToastError(err))
+			.finally(() => {
+				loadingBarSettingsTimers.removeAttribute("indeterminate");
+			});
 		}
 
 		function loadTimerDialog(timerId,zoned,timer) {
@@ -588,6 +723,15 @@
 				default: fanPower = 2;
 			}
 			form.fan_power_select.value = fanPower;
+			let waterGrade;
+			switch (timer.waterGrade) {
+				case 200: waterGrade = 0; break;
+				case 201: waterGrade = 1; break;
+				case 202: waterGrade = 2; break;
+				case 203: waterGrade = 3; break;
+				default: waterGrade = 2;
+			}
+			form.water_grade_select.value = waterGrade;
 			form.iterations_select.value = timer.iterations || 1;
 			form.zoned.value = zoned ? 1 : 0;
 			form.edit.value = timerId;
@@ -595,7 +739,7 @@
 			form.day.value = cron[2] || "";
 			form.hour.value = cron[1] || "";
 			form.minute.value = cron[0] || "";
-			if (cron[4] === "*" && fn.device.ver === 3) {
+			if (cron[4] === "*" && fn.device.features.v3 && !zoned) {
 				form.once.checked = true;
 				switchTimerOnce(form.once);
 			} else if (cron[4] !== "0,1,2,3,4,5,6") {
@@ -607,21 +751,10 @@
 				}
 			}
 			if (timer.coordinates) {
-				addZoneCoordinates('-',timer.coordinates);
+				processZoneCoordinates(timer.coordinates);
 			}
 			if (timer.segments) {
-				loadingBarSettingsTimers.setAttribute("indeterminate", "indeterminate");
-				getActualSegments()
-				.then(res => {
-					timer.segments.split(',').forEach(id => {
-						addSegment((res.find(r => r.id === +id) || '').name || i18next.t('settings.timers.missingSegment',"Segment not found on current map!"),id);
-					})
-				})
-				.catch(err => fn.notificationToastError(err))
-				.finally(() => {
-					loadingBarSettingsTimers.removeAttribute("indeterminate");
-					addSegmentButton.disabled = false;
-				});
+				processSegmentIndexes(timer.segments.split(','),timer.iterations);
 			}
 		}
 
@@ -697,9 +830,9 @@
 			if (daySelection.length) {
 				daySelection = daySelection.sort().join(",");
 			} else {
-				daySelection = fn.device.ver === 3 && !zoned ? "0,1,2,3,4,5,6" : "*"; // in 2008 a single asterisk in days means "run once and delete" for native cleaning
+				daySelection = fn.device.features.v3 && !zoned ? "0,1,2,3,4,5,6" : "*"; // in 2008 a single asterisk in days means "run once and delete" for native cleaning
 			}
-			if (form.once.checked && fn.device.ver === 3) {
+			if (form.once.checked && fn.device.features.v3) {
 				daySelection = "*"; // that's it, clean and forget
 			}
 			// do not allow meaningless timers
@@ -712,12 +845,22 @@
 			// fanpower
 			var fanPower;
 			switch (form.fan_power_select.value) {
-				case "0": fanPower = fn.device.ver === 3 ? 101 : 1 ; break;
-				case "1": fanPower = fn.device.ver === 3 ? 101 : 38; break;
-				case "3": fanPower = fn.device.ver === 3 ? 103 : 75; break;
-				case "4": fanPower = fn.device.ver === 3 ? 104 : 100; break;
+				case "0": fanPower = fn.device.features.v3 ? 101 : 1 ; break;
+				case "1": fanPower = fn.device.features.v3 ? 101 : 38; break;
+				case "3": fanPower = fn.device.features.v3 ? 103 : 75; break;
+				case "4": fanPower = fn.device.features.v3 ? 104 : 100; break;
 				case "5": fanPower = 105; break;
-				default: fanPower = fn.device.ver === 3 ? 102 : 60; break;
+				default: fanPower = fn.device.features.v3 ? 102 : 60; break;
+			}
+			// water
+			var waterGrade = null;
+			if (fn.device.features.water_usage_ctrl)
+			switch (form.waterGrade) {
+				case "0": waterGrade = 200; break;
+				case "1": waterGrade = 201; break;
+				case "2": waterGrade = 202; break;
+				case "3": waterGrade = 203; break;
+				default: waterGrade = 202;
 			}
 			var iterations = +form.iterations_select.value;
 			// next promises
@@ -759,7 +902,7 @@
 				})
 				.catch(e => reject(e))
 			})
-			.then(() => fn.prequestWithPayload(zoned ? "api/ztimers" : "api/timers", JSON.stringify({ enabled: true, id: timerName, cron: cronTimer, coordinates: coords, fanpower: fanPower, segments: segments, iterations: iterations, edit: edit }), "PUT"))
+			.then(() => fn.prequestWithPayload(zoned ? "api/ztimers" : "api/timers", JSON.stringify({id: timerName, cron: cronTimer, coordinates: coords, fanpower: fanPower, watergrade: waterGrade, segments: segments, iterations: iterations, edit: edit}), "PUT"))
 			.then(() => {
 				updateSettingsTimersPage(zoned);
 				editTimerDialog.hide();
@@ -772,17 +915,36 @@
 			});
 		}
 
+		function processZoneCoordinates(coordinates,ext) {
+			if (ext) {
+				clearCoordinatesAndIndexes();
+			}
+			addZoneCoordinates('-',coordinates);
+			formatZoneCoordinates(coordinates);
+		}
+		window.fn.processZoneCoordinates = (coordinates) => processZoneCoordinates(coordinates,true);
+
+		function processSegmentIndexes(idxs,iterations,ext) {
+			if (ext) {
+				clearCoordinatesAndIndexes();
+				document.getElementById('add-timer-form').iterations_select.value = parseInt(iterations) || 1;
+			}
+			formatSegmentIndexes(idxs);
+		}
+		window.fn.processSegmentIndexes = (indexes,iterations) => processSegmentIndexes(indexes,iterations,true);
+
 		//if timerId is set to null then open new timer, else edit existing
 		function showTimerDialog(timerId,zoned) {
 			zoned = zoned ? true : false;
 			// show different headers for different modes and fw
 			editTimerDialog.querySelectorAll('.ztimer-item').forEach(item => item.style.display = (zoned ? '' : 'none'));
-			editTimerDialog.querySelectorAll('.ntimer-item').forEach(item => item.style.display = (!zoned && fn.device.ver === 3 ? '' : 'none'));
+			editTimerDialog.querySelectorAll('.ntimer-item').forEach(item => item.style.display = (!zoned && fn.device.features.v3 ? '' : 'none'));
+			editTimerDialog.querySelectorAll('.wtimer-item').forEach(item => item.style.display = (!zoned && fn.device.features.water_usage_ctrl ? '' : 'none'));
 			editTimerDialog.querySelector('.edit-timer-desc').textContent = zoned ? i18next.t('settings.timers.timerZoneDesc',"Choose timer name and zone coordinates.") : i18next.t('settings.timers.timerDesc',"Choose timer settings.");
-			if (fn.device.ver === 3) {
-				editTimerDialog.querySelector('select > option[value="0"]').style.display = 'none';
+			if (fn.device.features.v3) {
+				editTimerDialog.querySelector('select > option[value="0"]').style.display = 'none'; // v3 devices doesn't have Whisper fanspeed
 			}
-			if (fn.device.model === "rockrobo.vacuum.v1") {
+			if (fn.device.features.nmop) {
 				editTimerDialog.querySelector('select > option[value="5"]').style.display = 'none';
 			}
 			clearTimerDialog(zoned);
@@ -790,9 +952,9 @@
 			container.style.cssText = "height: " + Math.min(zoned ? 470 : 400,window.innerHeight * 0.75) + "px; overflow: auto;";
 			if (timerId !== null) {
 				loadingBarSettingsTimers.setAttribute("indeterminate", "indeterminate");
+				let idx, tmr;
 				fn.prequest(zoned ? "api/ztimers" : "api/timers")
 				.then(res => {
-					let idx;
 					if ((idx = res.findIndex(timer => timer.id === timerId)) < 0) {
 						return Promise.reject(i18next.t('settings.timers.missingTimer',"No such timer."));
 					}
@@ -817,7 +979,10 @@
 			 white-space: nowrap;
 			 cursor: pointer;
 			 color: darkgrey;
-			 text-align: center
+			 line-height: 1.1;
+		}
+		.delete-field-link + ons-col {
+			line-height: 1.1;
 		}
 		.action-sheet {
 			max-height: 100%;

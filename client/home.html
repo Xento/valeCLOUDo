@@ -6,8 +6,8 @@
 		</p>
 		<div style="width:100%; text-align:center;">
 			<p id="robot-state-details">
-				<span id="robot-state-details-m2"><span data-i18n="home.labels.area">Area</span>: <span id="robot-state-details-m2-value">0.0</span> <span data-i18n="common.m2">m²</span></span>
-				<span id="robot-state-details-time"><span data-i18n="home.labels.time">Time</span>: <span id="robot-state-details-time-value">00:00:00</span></span>
+				<span id="robot-state-details-m2"><span data-i18n="common.area">Area</span>: <span id="robot-state-details-m2-value">0.0</span> <span data-i18n="common.m2">m²</span></span>
+				<span id="robot-state-details-time"><span data-i18n="common.time">Time</span>: <span id="robot-state-details-time-value">00:00:00</span></span>
 			</p>
 		</div>
 	</section>
@@ -15,24 +15,37 @@
 
 	<section id="robot-control-buttons">
 		<div>
-			<ons-button id="start-button" class="button-margin" onclick="handleControlButton('start')" disabled style="width:40%"><ons-icon icon="fa-play"></ons-icon> <span data-i18n="home.buttons.start">Start</span></ons-button><ons-button id="pause-button" class="button-margin" onclick="handleControlButton('pause')" disabled style="width:40%"><ons-icon icon="fa-pause"></ons-icon> <span data-i18n="home.buttons.pause">Pause</span></ons-button>
+			<ons-button id="start-button" onclick="handleControlButton('start')" disabled><ons-icon icon="fa-play"></ons-icon> <span data-i18n="home.buttons.start">Start</span></ons-button>
+			<ons-button id="pause-button" onclick="handleControlButton('pause')" disabled><ons-icon icon="fa-pause"></ons-icon> <span data-i18n="home.buttons.pause">Pause</span></ons-button>
+			<ons-button id="resume-button" onclick="handleResumeButton()" disabled style="display:none;"><ons-icon icon="fa-redo"></ons-icon> <span data-i18n="home.buttons.resume">Resume</span></ons-button>
 		</div><div>
-			<ons-button id="stop-button" class="button-margin" onclick="handleControlButton('stop')" disabled style="width:40%"><ons-icon icon="fa-stop"></ons-icon> <span data-i18n="home.buttons.stop">Stop</span></ons-button><ons-button id="home-button" class="button-margin" onclick="handleControlButton('home')" disabled style="width:40%"><ons-icon icon="fa-home"></ons-icon> <span data-i18n="home.buttons.home">Home</span></ons-button>
+			<ons-button id="stop-button" onclick="handleStopButton()" disabled><ons-icon icon="fa-stop"></ons-icon> <span data-i18n="home.buttons.stop">Stop</span></ons-button>
+			<ons-button id="home-button" onclick="handleHomeButton()" disabled><ons-icon icon="fa-charging-station"></ons-icon> <span data-i18n="home.buttons.home">Home</span></ons-button>
 		</div><div>
-			<ons-button id="spot-button" class="button-margin" onclick="handleControlButton('spot')" disabled style="width:40%"><ons-icon icon="fa-caret-down"></ons-icon> <span data-i18n="home.buttons.spot">Spot</span></ons-button><ons-button id="area-button" class="button-margin" onclick="handleAreaButton()" disabled style="width:40%"><ons-icon icon="fa-map"></ons-icon> <span data-i18n="home.buttons.zones">Zones</span></ons-button>
+			<ons-button id="spot-button" onclick="handleControlButton('spot')" disabled><ons-icon icon="fa-chevron-circle-down"></ons-icon> <span data-i18n="home.buttons.spot">Spot</span></ons-button>
+			<ons-button id="area-button" onclick="handleAreaButton()" disabled><ons-icon icon="fa-share-square"></ons-icon> <span data-i18n="home.buttons.zones">Zones</span></ons-button>
 		</div><div>
-			<ons-button id="go-to-button" class="button-margin" onclick="handleGoToButton()" disabled style="width:40%"><ons-icon icon="fa-map-signs"></ons-icon> <span data-i18n="home.buttons.goto">Go to</span></ons-button><ons-button id="find-robot-button" class="button-margin" onclick="handleControlButton('find')" disabled style="width:40%"><ons-icon icon="fa-map-marker"></ons-icon> <span data-i18n="home.buttons.find">Find</span></ons-button>
+			<ons-button id="go-to-button" onclick="handleGoToButton()" disabled><ons-icon icon="fa-map-marker"></ons-icon> <span data-i18n="home.buttons.goto">Go to</span></ons-button>
+			<ons-button id="find-robot-button" onclick="handleControlButton('find')" disabled><ons-icon icon="fa-volume-up"></ons-icon> <span data-i18n="home.buttons.find">Find</span></ons-button>
 		</div><div id="multimap-buttons" style="display: none;">
-		<ons-button id="store-map-button" class="button-margin" onclick="handleStoreMapButton()" disabled style="width:40%"><ons-icon icon="fa-file-export"></ons-icon> <span data-i18n="home.buttons.storeMap">Store Map</span></ons-button><ons-button id="load-map-button" class="button-margin" onclick="handleLoadMapButton()" disabled style="width:40%"><ons-icon icon="fa-file-import"></ons-icon> <span data-i18n="home.buttons.loadMap">Load Map</span></ons-button>
+			<ons-button id="store-map-button" onclick="handleStoreMapButton()" disabled><ons-icon icon="fa-file-export"></ons-icon> <span data-i18n="home.buttons.storeMap">Store Map</span></ons-button>
+			<ons-button id="load-map-button" onclick="handleLoadMapButton()" disabled><ons-icon icon="fa-file-import"></ons-icon> <span data-i18n="home.buttons.loadMap">Load Map</span></ons-button>
 		</div><div>
-		   <ons-button id="fanspeed-button" class="button-margin" onclick="handleFanspeedButton()" disabled style="width:40%"><ons-icon icon="fa-superpowers"></ons-icon> <span data-i18n="home.buttons.unknownPower">Unknown power</span></ons-button>
+			<ons-button id="fanspeed-button" onclick="handleFanspeedButton()" disabled><ons-icon icon="fa-superpowers"></ons-icon> <span data-i18n="home.buttons.unknownPower">Unknown power</span></ons-button>
+			<ons-button id="watergrade-button" onclick="handleWaterGradeButton()" style="display:none;" disabled><ons-icon icon="fa-tint"></ons-icon> <span data-i18n="home.buttons.unknownWaterGrade">Unknown Water Grade</span></ons-button>
 		</div>
 	</section>
 	<hr style="width:98%; opacity: 0.3">
 
 	<section style="margin: 10px 16px">
+		<p id="waterbox-status-text" style="display:none;">
+			<span data-i18n="common.waterbox">Waterbox</span>: <span id="waterbox-status-text-value"></span>
+		</p>
+		<p id="mop-status-text" style="display:none;">
+			<span data-i18n="common.mop">Mop</span>: <span id="mop-status-text-value"></span>
+		</p>
 		<p id="battery-status-text">
-			<span data-i18n="home.labels.battery">Battery</span>: <span id="battery-status-text-value">0</span>%
+			<span data-i18n="common.battery">Battery</span>: <span id="battery-status-text-value">0</span>%
 		</p>
 		<p>
 			<ons-progress-bar id="battery-status-bar" secondary-value="100"></ons-progress-bar>
@@ -41,10 +54,11 @@
 
 
 	<script>
-		var currentRefreshTimer, refreshInProgress = false, refreshDisabled = true;
+		var currentRefreshTimer, refreshInProgress = false;
 
 		var startButton = document.getElementById("start-button"),
 			pauseButton = document.getElementById("pause-button"),
+			resumeButton = document.getElementById("resume-button"),
 			stopButton = document.getElementById("stop-button"),
 			spotButton = document.getElementById("spot-button"),
 			goToButton = document.getElementById("go-to-button"),
@@ -52,6 +66,7 @@
 			storeMapButton = document.getElementById("store-map-button"),
 			loadMapButton = document.getElementById("load-map-button"),
 			fanspeedButton = document.getElementById("fanspeed-button"),
+			watergradeButton = document.getElementById("watergrade-button"),
 			findRobotButton = document.getElementById("find-robot-button"),
 			homeButton = document.getElementById("home-button"),
 			batteryStatusText = document.getElementById('battery-status-text-value'),
@@ -59,10 +74,14 @@
 			robotState = document.getElementById('robot-state'),
 			robotStateDetailsM2 = document.getElementById("robot-state-details-m2-value"),
 			robotStateDetailsTime = document.getElementById("robot-state-details-time-value"),
+			waterBoxStatus = document.getElementById("waterbox-status-text"),
+			mopInstallStatus = document.getElementById("mop-status-text"),
+			waterBoxStatusValue = document.getElementById("waterbox-status-text-value"),
+			mopInstallStatusValue = document.getElementById("mop-status-text-value"),
 			loadingBarHome = document.getElementById('loading-bar-home');
 
 		var fanspeedPresets = {};
-		var config = {};
+		var waterGradePresets = {};
 
 		var BUTTONS = {
 			"start": {
@@ -72,14 +91,6 @@
 			"pause": {
 				button: pauseButton,
 				url: "api/pause_cleaning"
-			},
-			"stop": {
-				button: stopButton,
-				url: "api/stop_cleaning"
-			},
-			"home": {
-				button: homeButton,
-				url: "api/drive_home"
 			},
 			"find": {
 				button: findRobotButton,
@@ -101,27 +112,68 @@
 		}
 
 		function handleControlButton(button) {
-			var btn = BUTTONS[button];
+			let btn = BUTTONS[button];
 			if (btn === undefined) {
-				throw new Error(i18next.t('home.buttons.invalid',"Invalid button"));
-			} else {
-				btn.button.setAttribute("disabled", "disabled");
-				loadingBarHome.setAttribute("indeterminate", "indeterminate");
-				fn.prequest(btn.url, "PUT")
-				.then(() => {
-					window.clearTimeout(currentRefreshTimer);
-					window.setTimeout(function () { updateHomePage(); }, 500);
-				}, (err) => {
-					btn.button.removeAttribute("disabled");
-					loadingBarHome.removeAttribute("indeterminate");
-					fn.notificationToastError(err);
-				});
+				return fn.notificationToastError(i18next.t('home.buttons.invalid',"Invalid button"));
 			}
+			btn.button.setAttribute("disabled", "disabled");
+			loadingBarHome.setAttribute("indeterminate", "indeterminate");
+			fn.prequest(btn.url, "PUT")
+			.then(() => {
+				clearTimeout(currentRefreshTimer);
+				setTimeout(() => updateHomePage(), 500);
+			})
+			.catch(err => {
+				btn.button.removeAttribute("disabled");
+				loadingBarHome.removeAttribute("indeterminate");
+				fn.notificationToastError(err);
+			});
+		}
+
+		function handleStopButton() {
+			loadingBarHome.setAttribute("indeterminate", "indeterminate");
+			stopButton.setAttribute("disabled", "disabled");
+			Promise.resolve()
+			.then(res => {
+				if (fn.device.state === 6 && !fn.device.features.v3) {
+					return fn.prequest("api/pause_cleaning", "PUT").then(res => new Promise(res => setTimeout(res,19e2)));
+				}
+			})
+			.then(res => fn.prequest("api/stop_cleaning", "PUT"))
+			.then(() => {
+				clearTimeout(currentRefreshTimer);
+				setTimeout(() => updateHomePage(), 500);
+			})
+			.catch(err => {
+				stopButton.removeAttribute("disabled");
+				loadingBarHome.removeAttribute("indeterminate");
+				fn.notificationToastError(err);
+			});
+		}
+
+		function handleHomeButton() {
+			loadingBarHome.setAttribute("indeterminate", "indeterminate");
+			homeButton.setAttribute("disabled", "disabled");
+			Promise.resolve()
+			.then(res => {
+				if ([5,11,16,17,18].includes(fn.device.state) && !fn.device.features.v3) {
+					return fn.prequest("api/stop_cleaning", "PUT").then(res => new Promise(res => setTimeout(res,19e2)));
+				}
+			})
+			.then(res => fn.prequest("api/drive_home", "PUT"))
+			.then(() => {
+				clearTimeout(currentRefreshTimer);
+				setTimeout(() => updateHomePage(), 500);
+			})
+			.catch(err => {
+				homeButton.removeAttribute("disabled");
+				loadingBarHome.removeAttribute("indeterminate");
+				fn.notificationToastError(err);
+			});
 		}
 
 		function handleFanspeedButton() {
-			window.clearTimeout(currentRefreshTimer);
-
+			clearTimeout(currentRefreshTimer);
 			ons.openActionSheet({
 				title: i18next.t('home.popups.selectFanspeed',"Select power mode:"),
 				cancelable: true,
@@ -135,29 +187,61 @@
 			})
 			.then(index => {
 				var level = Object.keys(fanspeedPresets)[index];
-
 				if (level) {
 					loadingBarHome.setAttribute("indeterminate", "indeterminate");
 					fanspeedButton.setAttribute("disabled", "disabled");
 					fn.prequestWithPayload("api/fanspeed", JSON.stringify({ speed: level }), "PUT")
 					.then(() => {
-						window.clearTimeout(currentRefreshTimer);
-						window.setTimeout(function () { updateHomePage(); }, 500);
-					}, (err) => {
+						clearTimeout(currentRefreshTimer);
+						setTimeout(() => updateHomePage(), 500);
+					})
+					.catch(err => {
 						fanspeedButton.removeAttribute("disabled");
 						loadingBarHome.removeAttribute("indeterminate");
 						fn.notificationToastError(err);
 					});
 				} else {
-					currentRefreshTimer = window.setTimeout(function () {
-						updateHomePage();
-					}, 3000);
+					currentRefreshTimer = setTimeout(() => updateHomePage(), 3000);
+				}
+			});
+		}
+
+		function handleWaterGradeButton() {
+			clearTimeout(currentRefreshTimer);
+			ons.openActionSheet({
+				title: i18next.t('home.popups.selectWaterGrade',"Select water grade:"),
+				cancelable: true,
+				buttons: [
+					...Object.values(waterGradePresets),
+					{
+						label: i18next.t('common.cancel',"Cancel"),
+						icon: 'md-close'
+					}
+				]
+			})
+			.then(index => {
+				var level = Object.keys(waterGradePresets)[index];
+				if (level) {
+					loadingBarHome.setAttribute("indeterminate", "indeterminate");
+					watergradeButton.setAttribute("disabled", "disabled");
+					fn.prequestWithPayload("api/watergrade", JSON.stringify({ speed: level }), "PUT")
+					.then(() => {
+						clearTimeout(currentRefreshTimer);
+						setTimeout(() => updateHomePage(), 500);
+					})
+					.catch(err => {
+						watergradeButton.removeAttribute("disabled");
+						loadingBarHome.removeAttribute("indeterminate");
+						fn.notificationToastError(err);
+					});
+				} else {
+					currentRefreshTimer = setTimeout(() => updateHomePage(), 3000);
 				}
 			});
 		}
 
 		function handleGoToButton() {
-			window.clearTimeout(currentRefreshTimer);
+			clearTimeout(currentRefreshTimer);
 			loadingBarHome.setAttribute("indeterminate", "indeterminate");
 			var spots;
 			fn.prequest("api/spots")
@@ -197,7 +281,13 @@
 						}});
 						return Promise.reject("cancel");
 					} else {
-						return fn.prequestWithPayload("api/go_to", JSON.stringify({x: spots[index].coordinates[0],y: spots[index].coordinates[1]}), "PUT");
+						return Promise.resolve()
+						.then(res => {
+							if (fn.device.state === 6) {
+								return fn.prequest("api/pause_cleaning", "PUT").then(res => new Promise(res => setTimeout(res,19e2)));
+							}
+						})
+						.then(res => fn.prequestWithPayload("api/go_to", JSON.stringify({x: spots[index].coordinates[0],y: spots[index].coordinates[1]}), "PUT"));
 					}
 				}
 				return Promise.reject("cancel");
@@ -206,15 +296,39 @@
 			.catch(e => {
 				if (e !== "cancel") fn.notificationToastError(e);
 			})
-			.finally(() => {
-				window.setTimeout(function () {
-					updateHomePage();
-				}, 200);
-			});
+			.finally(() => setTimeout(() => updateHomePage(), 200));
+		}
+
+		function handleResumeButton() {
+			loadingBarHome.setAttribute("indeterminate", "indeterminate");
+			resumeButton.setAttribute("disabled", "disabled");
+			fn.prequest("api/current_status")
+			.then(res => {
+				if ([2,10,12].includes(res.state)) {
+					if (res.in_returning === 1 || fn.device.features.nret && res.in_cleaning === 0 && res.state === 10) {
+						fn.prequest("api/drive_home", "PUT")
+						.then(()=> {
+							clearTimeout(currentRefreshTimer);
+							setTimeout(() => updateHomePage(), 200);
+						})
+						return;
+					} else if (res.in_cleaning > 0) {
+						fn.prequest("api/start_cleaning", "PUT")
+						.then(()=> {
+							clearTimeout(currentRefreshTimer);
+							setTimeout(() => updateHomePage(), 200);
+						})
+						return;
+					}
+				}
+			})
+			.catch(err => {
+				if (err !== "cancel") fn.notificationToastError(err);
+			})
 		}
 
 		function handleAreaButton() {
-			window.clearTimeout(currentRefreshTimer);
+			clearTimeout(currentRefreshTimer);
 			loadingBarHome.setAttribute("indeterminate", "indeterminate");
 			var zones, payload, calcPayload, markSubmitButton, zoneNumber = 0;
 			fn.prequest("api/zones")
@@ -277,12 +391,6 @@
 						e.stopPropagation();
 						if (e.target.checked) {
 							// checked right now
-							var attemptedLength = calcPayload().length + zones[e.target.dataset.id].coordinates.length;
-							if (attemptedLength > 5) {
-								ons.notification.alert(i18next.t('home.popups.tooManyZones',{defaultValue: "You've attempted to choose {{count}} subzones, while it is possible to use 5 subzones at most.", count: attemptedLength}),{title: i18next.t('common.attention',"Attention!")});
-								e.target.checked = false;
-								return;
-							}
 							e.target.dataset.num = ++zoneNumber;
 							e.target.parentNode.nextElementSibling.textContent = '[' + e.target.dataset.num + '/' + zones[e.target.dataset.id].coordinates.length + ']';
 							e.target.parentNode.parentNode.classList.add('zone_selected');
@@ -357,7 +465,13 @@
 						return Promise.reject("cancel");
 					} else {
 						loadingBarHome.setAttribute("indeterminate", "indeterminate");
-						return fn.prequestWithPayload("api/start_cleaning_zone", JSON.stringify(payload), "PUT")
+						return Promise.resolve()
+						.then(res => {
+							if (fn.device.state === 6 && !fn.device.features.v3) {
+								return fn.prequest("api/pause_cleaning", "PUT").then(res => new Promise(res => setTimeout(res,19e2)));
+							}
+						})
+						.then(res => fn.prequestWithPayload("api/start_cleaning_zone", JSON.stringify(payload), "PUT"));
 					}
 				} else {
 					return Promise.reject("cancel");
@@ -367,57 +481,110 @@
 			.catch(e => {
 				if (e !== "cancel") fn.notificationToastError(e);
 			})
-			.finally(() => {
-				window.setTimeout(function () {
-					updateHomePage();
-				}, 200);
-			});
+			.finally(() => setTimeout(() => updateHomePage(), 200));
 		}
 
 		function handleStoreMapButton() {
-			window.clearTimeout(currentRefreshTimer);
-			let slotName;
-			ons.notification.prompt({message: i18next.t('home.popups.chooseMapName',"Choose a title to save the map files as:"), title: i18next.t('common.prompt',"Prompt"), placeholder: "name", cancelable: true, buttonLabels: [i18next.t('common.cancel',"Cancel"), i18next.t('common.ok',"OK")] })
-			.then(slot => {
-				if (slot === null) {
+			clearTimeout(currentRefreshTimer);
+			loadingBarHome.setAttribute("indeterminate", "indeterminate");
+			let slotName, slots = [], options = [];
+			return fn.prequest("api/list_maps")
+			.then(data => {
+				data.sort((a, b) => a.localeCompare(b));
+				loadingBarHome.removeAttribute("indeterminate");
+				slots = data;
+				for (var i = 0; i < data.length; i++) {
+					options.push((/^[0-9]+$/.test(data[i]) ? i18next.t('home.popups.slotNo',"slot #") : "") + data[i]);
+				}
+				options.push({
+					label: '[' + i18next.t('home.popups.newSave',"new save") + ']',
+					icon: 'md-crop-free'
+				});
+				options.push({
+					label: i18next.t('common.cancel',"Cancel"),
+					icon: 'md-close'
+				});
+				let slotsList = ons.openActionSheet({
+					title: i18next.t('home.popups.selectMapToSave',"Select a slot to save the map to:"),
+					cancelable: true,
+					buttons: options
+				});
+				var slotsButtons = document.querySelectorAll('ons-action-sheet-button');
+				for (var i = 0; i < slotsButtons.length; i++) {
+					if (!i) slotsButtons[i].parentNode.parentNode.title = '';
+					slotsButtons[i].title = ''; // get rid of stupid title repeating on all buttons
+					if (slotsButtons[i].getAttribute('icon') === null) {
+						slotsButtons[i].insertAdjacentHTML('beforeend','<span class="remove-stored-map" data-id="' + i + '"><i class="fas fa-times"></i></span>')
+					}
+				}
+				document.querySelector('ons-action-sheet').addEventListener('click',function(e) {
+					if (e.button || e.target.getAttribute('icon') === 'md-close') { return; }
+					if (e.target.className === 'remove-stored-map') {
+						e.stopPropagation();
+						slotName = slots[e.target.dataset.id];
+						ons.notification.confirm(i18next.t('home.popups.confirmMapDelete',{defaultValue: "Are you sure you want to delete \"{{name}}\"?",name: options[e.target.dataset.id]}),{buttonLabels: [i18next.t('common.cancel',"Cancel"), i18next.t('common.ok',"OK")], title: i18next.t('common.confirm',"Confirm")}).then(answer => {
+							if (answer === 1) {
+								loadingBarHome.setAttribute("indeterminate", "indeterminate");
+								fn.prequestWithPayload("api/remove_map", JSON.stringify({ name: slotName }), "PUT").then(
+									(res) => fn.notificationToastOK(i18next.t('home.popups.mapDeletedOK',"Stored map successfully deleted!")),
+									(err) => fn.notificationToastError(err)
+								)
+								.finally(() => document.querySelector('ons-action-sheet ons-action-sheet-button:last-of-type').click());
+							}
+						});
+					}
+				},true);
+				return slotsList;
+			})
+			.then(index => {
+				if (index > -1 && index < slots.length) {
+					slotName = slots[index];
+					return 1;
+				} else if (index === slots.length) {
+					return ons.notification.prompt({message: i18next.t('home.popups.chooseMapName',"Choose a title to save the map files as:"), title: i18next.t('common.prompt',"Prompt"), placeholder: "name", cancelable: true, buttonLabels: [i18next.t('common.cancel',"Cancel"), i18next.t('common.ok',"OK")] })
+					.then(slot => {
+						if (slot === null) {
+							return Promise.reject("cancel");
+						}
+						slot = slot.trim();
+						if (!/^[a-zа-яё0-9\-_\ ]+$/i.test(slot)) {
+							return Promise.reject(i18next.t('home.popups.invalidMapName',"Title may contain only latin letters or numbers, spaces and hyphen."));
+						}
+						slotName = slot;
+						if (slots.includes(slotName)) {
+							return 1;
+						}
+						return 0;
+					});
+				} else {
 					return Promise.reject("cancel");
 				}
-				slot = slot.trim();
-				if (!/^[a-zа-яё0-9\-_\ ]+$/i.test(slot)) {
-					return Promise.reject(i18next.t('home.popups.invalidMapName',"Title may contain only latin letters or numbers, spaces and hyphen."));
-				}
-				slotName = slot;
-				loadingBarHome.setAttribute("indeterminate", "indeterminate");
-				return fn.prequest("api/list_maps");
 			})
-			.then(res => {
-				if (res.includes(slotName)) {
+			.then(overwrite => {
+				if (overwrite) {
 					return ons.notification.confirm((/^[0-9]+$/.test(slotName) ? i18next.t('home.popups.slotAlreadyTaken',{defaultValue: "Slot #{{slot}} is already occupied", slot: slotName}) : i18next.t('home.popups.nameAlreadyTaken',{defaultValue: "Name \"{{name}}\" is already taken", name: slotName})) + ". " + i18next.t('common.overwrite',"Overwrite") + "?",{buttonLabels: [i18next.t('common.cancel',"Cancel"), i18next.t('common.overwrite',"Overwrite")], title: i18next.t('common.confirm',"Confirm")});
+				} else {
+					return 1;
 				}
-				return 1;
 			})
 			.then(res => {
 				if (res === 0) {
 					return Promise.reject("cancel");
 				}
+				loadingBarHome.setAttribute("indeterminate", "indeterminate");
 				return fn.prequestWithPayload("api/store_map", JSON.stringify({name: slotName}), "PUT");
 			})
 			.then(res => fn.notificationToastOK(i18next.t('home.popups.mapStoredOK',"Map stored successfully!")))
 			.catch(err => {
 				if (err !== "cancel") fn.notificationToastError(err);
 			})
-			.finally(() => {
-				loadingBarHome.removeAttribute("indeterminate");
-				window.setTimeout(function () {
-					updateHomePage();
-				}, 500);
-			});
+			.finally(() => setTimeout(() => updateHomePage(), 500));
 		}
 
 		function handleLoadMapButton() {
-			window.clearTimeout(currentRefreshTimer);
+			clearTimeout(currentRefreshTimer);
 			loadingBarHome.setAttribute("indeterminate", "indeterminate");
-			let slots = [], options = [];
+			let slotName, slots = [], options = [];
 			fn.prequest("api/list_maps")
 			.then(data => {
 				data.sort((a, b) => a.localeCompare(b));
@@ -465,11 +632,18 @@
 			.then(index => {
 				if (index > -1 && index < slots.length) {
 					document.querySelectorAll('#robot-control-buttons ons-button').forEach(button => button.setAttribute('disabled','disabled'));
-					loadingBarHome.setAttribute("indeterminate", "indeterminate");
-					return fn.prequestWithPayload("api/load_map", JSON.stringify({ name: slots[index] }), "PUT");
+					slotName = slots[index];
+					return ons.notification.confirm(i18next.t('home.popups.confirmMapLoad',{defaultValue: "Are you sure you want to load map \"{{name}}\"?", name: slotName}),{buttonLabels: [i18next.t('common.cancel',"Cancel"), i18next.t('common.ok',"OK")], title: i18next.t('common.confirm',"Confirm")});
 				} else {
 					return Promise.reject("cancel");
 				}
+			})
+			.then(res => {
+				if (res === 0) {
+					return Promise.reject("cancel");
+				}
+				loadingBarHome.setAttribute("indeterminate", "indeterminate");
+				return fn.prequestWithPayload("api/load_map", JSON.stringify({name: slotName}), "PUT");
 			})
 			.then(res => {
 				if (res.message === 'wait') {
@@ -478,15 +652,15 @@
 						adc = document.querySelector('.load-map-waiting .alert-dialog-content'),
 						adt = document.querySelector('.load-map-waiting .alert-dialog-title'),
 						adi = setInterval(() => {
-						   let seconds = +(adc.textContent.match(/(\d+)/) || [])[1] || 0;
-						   if (seconds <= 1) {
-							   clearInterval(adi);
-							   adb.classList.remove('ok-disabled');
-							   adt.textContent = i18next.t('home.popups.waitMapFinished',"Finished");
-							   adc.textContent = i18next.t('home.popups.waitMapEncourage',"Requested routines should be completed now.");
-						   } else {
-							   adc.textContent = adc.textContent.replace(seconds,--seconds);
-						   }
+							let seconds = +(adc.textContent.match(/(\d+)/) || [])[1] || 0;
+							if (seconds <= 1) {
+								clearInterval(adi);
+								adb.classList.remove('ok-disabled');
+								adt.textContent = i18next.t('home.popups.waitMapFinished',"Finished");
+								adc.textContent = i18next.t('home.popups.waitMapEncourage',"Requested routines should be completed now.");
+							} else {
+								adc.textContent = adc.textContent.replace(seconds,--seconds);
+							}
 						},1e3);
 					adb.classList.add('ok-disabled');
 					return waiting;
@@ -497,27 +671,55 @@
 			.catch(err => {
 				if (err !== "cancel") fn.notificationToastError(err);
 			})
-			.finally(() => {
-				loadingBarHome.removeAttribute("indeterminate");
-				window.setTimeout(function () {
-					updateHomePage();
-				}, 500);
-			});
+			.finally(() => setTimeout(() => updateHomePage(), 200));
 		}
 
 		function updateHomePage() {
-			if (refreshInProgress || refreshDisabled) {
+			if (refreshInProgress || document.querySelector('ons-tabbar ons-tab.active').page !== "home.html") { // workaround: due to bug in onsenui sometimes 'shown' attribute remains on a hidden page, thus this hack
 				return;
 			}
 			refreshInProgress = true;
-			window.clearTimeout(currentRefreshTimer);
+			clearTimeout(currentRefreshTimer);
 			loadingBarHome.setAttribute("indeterminate", "indeterminate");
 			fn.prequest("api/current_status")
 			.then((res) => {
+				fn.device.state = res.state;
+
 				batteryStatusText.textContent = res.battery;
 				batteryStatusBar.value = res.battery;
 
-				robotState.innerHTML = i18next.t('robot.states.n' + res.state, res.human_state);
+				if (fn.device.features.water_box_status) {
+					var waterBoxStatusTexts = {
+						0: i18next.t('home.waterBoxStatusTexts.not',"Not installed"),
+						1: i18next.t('home.waterBoxStatusTexts.installed',"Installed"),
+					};
+					waterBoxStatusValue.textContent = "" + (waterBoxStatusTexts[res.water_box_status] || `Unknown ${res.water_box_status}`);
+				}
+				if (fn.device.features.mop_install_status) {
+					var mopStatusTexts = {
+						0: i18next.t('home.mopStatusTexts.not',"Carriage not installed"),
+						1: i18next.t('home.mopStatusTexts.installed',"Carriage installed"),
+					};
+					mopInstallStatusValue.textContent = "" + (mopStatusTexts[res.water_box_carriage_status] || `Unknown ${res.water_box_carriage_status}`);
+				}
+
+				robotState.textContent = i18next.t('robot.states.n' + res.state, res.human_state);
+				if (res.state === 12 && res.error_code !== 0) {
+					robotState.textContent += ' #' + res.error_code;
+				}
+				if (res.in_cleaning && [8,10,12].includes(res.state)) {
+					switch (res.in_cleaning) {
+						case 1:
+							robotState.textContent += " / " + i18next.t('robot.states.n5', "Cleaning");
+							break;
+						case 2:
+							robotState.textContent += " / " + i18next.t('robot.states.n17', "Zoned cleaning");
+							break;
+						case 3:
+							robotState.textContent += " / " + i18next.t('robot.states.n18', "Rooms cleaning");
+							break;
+					}
+				}
 				if (res.error_code != 0) {
 					robotState.innerHTML +=
 						'<span class="robot-error"><ons-icon icon="fa-exclamation-triangle"></ons-icon> ' +
@@ -525,34 +727,28 @@
 						' <ons-icon icon="fa-exclamation-triangle"></ons-icon></span>';
 				}
 
-				if (res.in_cleaning > 0 || res.state === 11 || res.state === 16) {
-					if ([2,3,10].includes(res.state)) {
-						pauseButton.setAttribute("disabled", "disabled");
-						startButton.removeAttribute("disabled");
-					} else {
-						pauseButton.removeAttribute("disabled");
-						startButton.setAttribute("disabled", "disabled");
-					}
+				if ([2,3,5,6,8,10,12,17,18].includes(res.state)) {
+					startButton.removeAttribute("disabled");
 				} else {
-					pauseButton.setAttribute("disabled", "disabled");
-					if (res.state !== 6) {
-						startButton.removeAttribute("disabled");
-					} else {
-						pauseButton.removeAttribute("disabled");
-						startButton.setAttribute("disabled", "disabled");
-					}
+					startButton.setAttribute("disabled", "disabled");
 				}
 
-				if ([3,6,8,10,11,15,16].includes(res.state)) {
+				if ([5,6,11,16,17,18].includes(res.state)) {
+					pauseButton.removeAttribute("disabled");
+				} else {
+					pauseButton.setAttribute("disabled", "disabled");
+				}
+
+				if ([3,11,15,16].includes(res.state) || ([8,10].includes(res.state) && !(res.in_cleaning || res.in_returning))) {
 					stopButton.setAttribute("disabled", "disabled");
 				} else {
 					stopButton.removeAttribute("disabled");
 				}
 
-				if ([5,6,8,9,11,16,17,18].includes(res.state)) {
-					homeButton.setAttribute("disabled", "disabled");
-				} else {
+				if ([2,3,5,10,11,12,16,17,18].includes(res.state)) {
 					homeButton.removeAttribute("disabled");
+				} else {
+					homeButton.setAttribute("disabled", "disabled");
 				}
 
 				if ([2,3,10].includes(res.state)) {
@@ -561,7 +757,7 @@
 					spotButton.setAttribute("disabled", "disabled");
 				}
 
-				if ([3,8].includes(res.state) || (res.state === 2 && res.in_cleaning === 0)) {
+				if ([2,3,8].includes(res.state) && !res.in_cleaning) {
 					storeMapButton.removeAttribute("disabled");
 					loadMapButton.removeAttribute("disabled");
 				} else {
@@ -569,10 +765,20 @@
 					loadMapButton.setAttribute("disabled", "disabled");
 				}
 
+				if (res.state === 10 || ([2,12].includes(res.state) && res.in_cleaning > 0)) {
+					document.getElementById("pause-button").style.display = 'none';
+					document.getElementById("resume-button").style.display = '';
+					resumeButton.removeAttribute("disabled");
+				} else {
+					document.getElementById("pause-button").style.display = '';
+					document.getElementById("resume-button").style.display = 'none';
+					resumeButton.setAttribute("disabled", "disabled");
+				}
+
 				robotStateDetailsM2.textContent = ("00" + (res.clean_area / 1000000).toFixed(2)).slice(-6);
 				robotStateDetailsTime.textContent = fn.secondsToHms(res.clean_time);
 
-				fanspeedPresets = fn.device.ver !== 3 ? {
+				fanspeedPresets = !fn.device.features.v3 ? {
 					1: i18next.t('home.fanspeedPresets.whisper',"Whisper"),
 					38: i18next.t('home.fanspeedPresets.quiet',"Quiet"),
 					60: i18next.t('home.fanspeedPresets.balanced',"Balanced"),
@@ -584,20 +790,36 @@
 					103: i18next.t('home.fanspeedPresets.turbo',"Turbo"),
 					104: i18next.t('home.fanspeedPresets.max',"Max")
 				};
-				if (fn.device.model !== "rockrobo.vacuum.v1") {
+				if (!fn.device.features.nmop) {
 					fanspeedPresets[105] = i18next.t('home.fanspeedPresets.mop',"Mop");
 				}
 				fanspeedButton.innerHTML = "<ons-icon icon=\"fa-superpowers\"></ons-icon> " + (fanspeedPresets[res.fan_power] || `Custom ${res.fan_power}%`);
+				if (fn.device.features.water_usage_ctrl) {
+					waterGradePresets = {
+						200: i18next.t('home.waterGradePresets.off',"Off"),
+						201: i18next.t('home.waterGradePresets.low',"Low"),
+						202: i18next.t('home.waterGradePresets.medium',"Medium"),
+						203: i18next.t('home.waterGradePresets.high',"High"),
+					};
+					watergradeButton.innerHTML = "<ons-icon icon=\"fa-tint\"></ons-icon> " + (waterGradePresets[res.water_box_mode] || `Custom ${res.water_box_mode}%`);
+				}
 			}, (err) => fn.notificationToastError(err))
 			.finally(() => {
 				refreshInProgress = false;
 				loadingBarHome.removeAttribute("indeterminate");
 				fanspeedButton.removeAttribute("disabled");
+				if (fn.device.features.water_usage_ctrl) {
+					watergradeButton.removeAttribute("disabled");
+					watergradeButton.style.display = "";
+				}
+				if (fn.device.features.water_box_status) {
+					waterBoxStatus.style.display = "";
+				}
+				if (fn.device.features.mop_install_status) {
+					mopInstallStatus.style.display = "";
+				}
 				findRobotButton.removeAttribute("disabled");
-
-				currentRefreshTimer = window.setTimeout(function () {
-					updateHomePage();
-				}.bind(this), 5000);
+				currentRefreshTimer = setTimeout(() => updateHomePage(), 5e3)
 			});
 		};
 
@@ -605,31 +827,23 @@
 			fn.localize('#home-page');
 		}
 
+		ons.getScriptPage().onHide = function () {
+			clearTimeout(currentRefreshTimer);
+		}
+
 		ons.getScriptPage().onShow = function () {
-			refreshDisabled = false;
 			/* multimap visibility */
 			document.getElementById('multimap-buttons').style.display = fn.webifSettings.showMultimap ? '' : 'none';
 			/* check for area and go to configuration */
-			fn.prequest("api/get_config")
-			.then((res) => {
-				config = res;
-				if (config.spots && config.spots.length > 0) {
-					goToButton.removeAttribute("disabled");
-				}
-				if (config.areas && config.areas.length > 0) {
-					areaButton.removeAttribute("disabled");
-				}
-			})
+			Promise.all([
+				fn.prequest("api/zones").then(res => res.length > 0 && areaButton.removeAttribute("disabled")),
+				fn.prequest("api/spots").then(res => res.length > 0 && goToButton.removeAttribute("disabled"))
+			])
 			.catch(err => fn.notificationToastError(err))
 			.finally(() => {
 				updateHomePage();
 			});
 		};
-
-		ons.getScriptPage().onHide = function () {
-			refreshDisabled = true;
-			window.clearTimeout(currentRefreshTimer);
-		}
 
 	</script>
 	<style>
@@ -648,9 +862,10 @@
 			text-align: center;
 		}
 
-		#robot-control-buttons > ons-button {
-			margin: 5px;
-			font-size: 1.2em;
+		#robot-control-buttons ons-button {
+			margin: 0.25em 0.15em;
+			font-size: 1.1em;
+			width: 44%;
 		}
 
 		#robot-state-details-m2 {
@@ -659,9 +874,6 @@
 
 		#robot-state-details-time {
 			text-align: right;
-		}
-		.button-margin {
-			margin: 0.2em;
 		}
 
 		.action-sheet {
@@ -737,6 +949,18 @@
 		}
 		.load-map-waiting .ok-disabled:active {
 			background-color: inherit;
+		}
+		#battery-status-bar > div {
+			height: 6px;
+		}
+		#battery-status-bar > div::before {
+			content: " ";
+			display: block;
+			position: absolute;
+			z-index: 10000;
+			width: 100%;
+			height: 6px;
+			background:  repeating-linear-gradient(90deg, #ddd, #ddd 1px, transparent 1px, transparent calc(10% - 1px), #ddd calc(10% - 1px), #ddd 10%)
 		}
 	</style>
 

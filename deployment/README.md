@@ -1,3 +1,18 @@
+### Conformance notice
+
+The instuctions below were suitable for devices with firmware based on full-featured
+Ubuntu 14.04 distribution (all gen1 firmware and gen2 firmware below version 2008)
+
+# For Gen2 devices with firmware version 2008 and newer:
+
+To initially install valetudo into 2008 firmware, users would have to create a special
+version of firmware image using [rand256](https://github.com/rand256/vacuum)'s or [zvldz](https://github.com/zvldz/vacuum)'s image builder.
+For further updating valetudo on that firmware, continue to the [this wiki page](https://github.com/rand256/valetudo/wiki/Updating-valetudo-binary-on-2008-firmware).
+
+# For all Gen3 devices:
+
+Please proceed to [this wiki page](https://github.com/rand256/valetudo/wiki/Installing-and-updating-valetudo-on-Gen3-devices).
+
 ### Downloading pre-built Valetudo
 
 You can simply download pre-built binaries of Valetudo from the
@@ -61,6 +76,7 @@ To install scp `*.deb`s to the vacuum and run `dpkg -i file.deb`.
 
 Another way to deal with this issue is to manually rebuild `pkg` binaries to link
 libstd++ statically. This is the way how prebuilt Valetudo binary was created here.
+Some ready to use patched node.js binaries are available in this repository [Releases section](https://github.com/rand256/valetudo/releases).
 
 ### Installing and configuring
 
@@ -77,6 +93,16 @@ file on the robot.
 
 Second edit the `/etc/rc.local` file and add the content of
 `deployment/etc/rc.local` before the `exit 0` line.
+
+### Create self-signed rsa key and cert for enforced https (optional)
+```
+mkdir -p /mnt/data/valetudo
+cd /mnt/data/valetudo
+openssl genrsa -out key.pem 4096
+openssl req -new -key key.pem -out csr.pem
+openssl x509 -req -days 9999 -in csr.pem -signkey key.pem -out cert.pem
+rm csr.pem
+```
 
 ### Reboot
 

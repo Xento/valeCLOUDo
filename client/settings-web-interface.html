@@ -16,6 +16,8 @@
 			<div class='right'><ons-select class="settings-webif-select" id="settings-webif-localization">
 				<option value="">Default</option>
 				<option value="bg">Bulgarian</option>
+				<option value="ca">Catalan</option>
+				<option value="cz">Czech</option>
 				<option value="nl">Dutch</option>
 				<option value="en">English</option>
 				<option value="fi">Finnish</option>
@@ -23,9 +25,12 @@
 				<option value="de">German</option>
 				<option value="hu">Hungarian</option>
 				<option value="it">Italian</option>
+				<option value="lv">Latvian</option>
 				<option value="pl">Polish</option>
 				<option value="ru">Russian</option>
 				<option value="es">Spanish</option>
+				<option value="sv">Swedish</option>
+				<option value="tw">Traditional Chinese</option>
 			</ons-select></div>
 		</ons-list-item>
 		<ons-list-item>
@@ -69,12 +74,17 @@
 			<div class='right'><ons-switch class="settings-webif-switch" id="settings-webif-hide-segment-markers"></ons-switch></div>
 		</ons-list-item>
 		<ons-list-item>
-			<div class='left'><div><div data-i18n="settings.webInterface.disableMapReload">Disable map reload button</div><div class="small" data-i18n="settings.webInterface.disableMapReloadExt">hides force reload button on the map</div></div></div>
-			<div class='right'><ons-switch class="settings-webif-switch" id="settings-webif-hide-map-reload"></ons-switch></div>
-		</ons-list-item>
-		<ons-list-item>
 			<div class='left'><div><div data-i18n="settings.webInterface.disableDynamicButtons">Disable dynamic buttons</div><div class="small" data-i18n="settings.webInterface.disableDynamicButtonsExt">shows on map basic buttons only</div></div></div>
 			<div class='right'><ons-switch class="settings-webif-switch" id="settings-webif-static-map-buttons"></ons-switch></div>
+		</ons-list-item>
+	</ons-list>
+	<ons-list-title style="margin-top:5px;" data-i18n="settings.webInterface.controlTab">
+		Manual control tab
+	</ons-list-title>
+	<ons-list>
+		<ons-list-item>
+			<div class='left'><div><div data-i18n="settings.webInterface.hideControlMap">Do not show mini-map</div><div class="small" data-i18n="settings.webInterface.hideControlMapExt">it may work improperly on some devices and can't be fixed</div></div></div>
+			<div class='right'><ons-switch class="settings-webif-switch" id="settings-webif-hide-control-map"></ons-switch></div>
 		</ons-list-item>
 	</ons-list>
 	<ons-list-item>
@@ -140,7 +150,7 @@
 
 		function setWebifSettings() {
 			loadingBarWebif.setAttribute("indeterminate", "indeterminate");
-			fn.prequestWithPayload("api/set_interface_config", JSON.stringify(window.fn.webifSettings), "PUT")
+			fn.prequestWithPayload("api/interface_config", JSON.stringify(window.fn.webifSettings), "PUT")
 			.then((res) => {
 				if (oldLocalization !== window.fn.webifSettings.localization || oldStyle !== window.fn.webifSettings.style || oldHideSegmentMarkers !== window.fn.webifSettings.hideSegmentMarkers)
 				ons.notification.confirm(i18next.t('settings.webInterface.applyChangesConfirm',"Would you like to apply changes right now?"),{buttonLabels: [i18next.t('common.cancel',"Cancel"), i18next.t('common.ok',"OK")], title: i18next.t('common.confirm',"Confirm")}).then(res => {

@@ -10,14 +10,26 @@
 	<script src="js/i18n.min.js" ></script>
 	<script src="js/i18n.html5.min.js"></script>
 	<script src="js/i18n.xhr.min.js"></script>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 	<meta name="apple-mobile-web-app-capable" content="yes">
 	<meta name="mobile-web-app-capable" content="yes">
 	<meta name="theme-color" content="#4285f4">
-	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+	<meta name="apple-mobile-web-app-status-bar-style" content="default">
 	<meta charset="utf-8">
 	<link rel="icon" sizes="192x192" href="icon.png">
-	<link rel="apple-touch-icon" href="icon.png">
+	<link rel="apple-touch-icon" href="icon-apple.png">
 	<title>Mi Robot Vacuum</title>
+	<style>
+		#initial_loading_msg {
+			margin: 5px;
+			position: absolute;
+			z-index: 3;
+		}
+		
+		#initial_loading_msg > a {
+			text-decoration: underline;
+		}
+	</style>
 </head>
 <body>
 	<script>
@@ -53,13 +65,14 @@
 		};
 
 		window.fn.popPage = function() {
-			document.getElementById('appNavigator').popPage();
+			const retval = document.getElementById('appNavigator').popPage();
 			let stateObj = {moveView: (history.state && history.state.moveView || 0)};
 			if (history.state && history.state.moveSubPage && history.state.moveSubPage.length > 1) {
 				stateObj.moveSubPage = history.state.moveSubPage.splice(0);
 				stateObj.moveSubPage.shift();
 			}
 			history.pushState(stateObj, "");
+			return retval;
 		}
 
 		window.fn.getTopPage = function() {
@@ -107,7 +120,11 @@
 				request.onload = function () {
 					if (request.status >= 200 && request.status < 400) {
 						if (request.responseType === "") {
-							resolve(JSON.parse(request.responseText));
+							try {
+								resolve(JSON.parse(request.responseText));
+							} catch (e) {
+								resolve(request.responseText);
+							}
 						} else {
 							resolve(request.response);
 						}
@@ -217,65 +234,76 @@
 			fn.loadView(targetID);
 		}
 
-		var waitForGlobals = fn.prequest("api/current_status")
-		.then(res => {
-			fn.device = {
-				model: res.model,
-				ver: res.msg_ver
-			};
-		}, err => {
-			fn.device = {
-				model: "unknown",
-				ver: 1
-			};
-		})
-		.then(res => fn.prequest("api/get_interface_config"))
-		.then(res => {
-			fn.webifSettings = res;
-			if (fn.webifSettings.style === "dark") {
-				document.getElementById('color-theme').setAttribute('href', 'css/dark-onsen-css-components.min.css');
-			}
-			else if (fn.webifSettings.style === "system") {
-				document.getElementById('color-theme').setAttribute('href', 'css/system-onsen-css-components.min.css');
-			}
-			return i18next.use(i18nextXHRBackend).init({
-				interpolation: {
-					format: function(value, format, lng) {
-						if (format === 'lowercase') return value.toLowerCase();
-						if (format === 'uppercase') return value.toUpperCase();
-						return value;
-					}
-				},
-				lng: res.localization || '',
-				fallbackLng: '',
-				backend: {
-					loadPath: 'locales/{{lng}}.json'
-				},
-				debug: false
+		var fetchDevice = function(retry) {
+			return fn.prequest("api/device_features")
+			.then(res => {
+				if (res.error) throw res.error;
+				fn.device = res;
 			})
-		})
-		.then(res => { window.fn.localize = locI18next.init(i18next,{selectorAttr: 'data-i18n', targetAttr: 'data-i18n-target' }); })
-		.then(res => {
-			let ploadImg = (name,file) => {
+			.catch(err => {
+				if (retry) {
+					throw "can't get device features: " + err;
+				}
 				return new Promise((resolve,reject) => {
-					window.fn[name] = new Image();
-					window.fn[name].onload = () => resolve();
-					window.fn[name].onerror = () => reject("icon loading failed");
-					window.fn[name].src = 'img/' + file;
+					setTimeout(() => fetchDevice(true).then(resolve).catch(e => reject(e)),5e3);
 				});
-			}
-			return Promise.all([ploadImg('robotImg',(fn.device.model === 'rockrobo.vacuum.v1' ? 'robot_v1.png' : 'robot.png')),ploadImg('chargerImg','charger.png')]);
-		})
-		.catch(e => {
-			fn.localize = function() {};
-			console.error('loading interface configuration has failed', e);
-		});
-
-		if (ons.platform.isIPhoneX()) {
-			document.documentElement.setAttribute('onsflag-iphonex-portrait', '');
+			})
+			.then(res => {
+				let ploadImg = (name,file) => {
+					return new Promise((resolve,reject) => {
+						window.fn[name] = new Image();
+						window.fn[name].onload = () => resolve();
+						window.fn[name].onerror = () => reject("icon loading failed");
+						window.fn[name].src = 'img/' + file;
+					});
+				}
+				return Promise.all([ploadImg('robotImg',(['rockrobo.vacuum.v1','roborock.vacuum.t4','roborock.vacuum.s4'].includes(fn.device.model) ? 'robot_v1.png' : 'robot.png')),ploadImg('chargerImg','charger.png')]);
+			})
 		}
+
+		var waitForGlobals = function(skipDevice) {
+			return Promise.resolve()
+			.then(() => {
+				if (skipDevice) {
+					fn.device = {features: {}};
+					return;
+				} else {
+					return fetchDevice();
+				}
+			})
+			.then(res => fn.prequest("api/interface_config"))
+			.then(res => {
+				fn.webifSettings = res;
+				if (fn.webifSettings.style === "dark") {
+					document.getElementById('color-theme').setAttribute('href', 'css/dark-onsen-css-components.min.css');
+				}
+				else if (fn.webifSettings.style === "system") {
+					document.getElementById('color-theme').setAttribute('href', 'css/system-onsen-css-components.min.css');
+				}
+				return i18next.use(i18nextXHRBackend).init({
+					interpolation: {
+						format: function(value, format, lng) {
+							if (format === 'lowercase') return value.toLowerCase();
+							if (format === 'uppercase') return value.toUpperCase();
+							return value;
+						}
+					},
+					lng: res.localization || '',
+					fallbackLng: '',
+					backend: {
+						loadPath: 'locales/{{lng}}.json'
+					},
+					debug: false
+				})
+			})
+			.then(res => { window.fn.localize = locI18next.init(i18next,{selectorAttr: 'data-i18n', targetAttr: 'data-i18n-target' }); });
+		}
+
+		window.addEventListener('resize', _ => {
+			Array.from(document.getElementsByTagName('canvas')).forEach(a => a.dispatchEvent(new Event('resizeCanvas')));
+		});
 	</script>
-	<div>Loading...</div>
+	<div id="initial_loading_msg">Loading...</div>
 	<script type="module" crossorigin>
 		import { RRMapParser } from "./zone/js-modules/rr-map-parser.js";
 		import { VacuumMap } from "./zone/js-modules/vacuum-map.js"
@@ -283,7 +311,13 @@
 		window.fn.createVacuumMap = function(canvasElement) { return new VacuumMap(canvasElement); }
 
 		ons.ready(function () {
-			waitForGlobals.then(() => document.getElementById("appNavigator").pushPage('app-splitter.html'));
+			var ilm = document.getElementById('initial_loading_msg');
+			waitForGlobals().then(() => { ilm.textContent = ''; document.getElementById("appNavigator").pushPage('app-splitter.html'); })
+			.catch(e => {
+				ilm.innerHTML = "Loading interface configuration has failed.</br></br><a href='' id='wfg_fallback'>Continue anyway?</a>";
+				document.getElementById('wfg_fallback').onclick = function() { waitForGlobals(true).then(() => { ilm.textContent = ''; document.getElementById("appNavigator").pushPage('app-splitter.html'); }); return false; }
+				console.error(e);
+			});
 
 			// todo: make it work without timeout hacks
 			switch (window.location.hash) {
@@ -333,8 +367,8 @@
 				<div class="center" data-i18n="navi.home">Home</div>
 			</ons-toolbar>
 			<ons-tabbar swipeable id="appTabbar" position="auto">
-				<ons-tab label="Home" data-i18n="[label]navi.home" icon="ion-home" page="home.html" onclick="pushView(0,'home.html');" active></ons-tab>
-				<ons-tab label="Map" data-i18n="[label]navi.map" icon="fa-map-marker" page="map.html" onclick="pushView(1,'map.html');"></ons-tab>
+				<ons-tab label="Home" data-i18n="[label]navi.home" icon="fa-home" page="home.html" onclick="pushView(0,'home.html');" active></ons-tab>
+				<ons-tab label="Map" data-i18n="[label]navi.map" icon="fa-map" page="map.html" onclick="pushView(1,'map.html');"></ons-tab>
 				<ons-tab label="Zones" data-i18n="[label]navi.zones" icon="fa-share-square" page="zones.html" onclick="pushView(2,'zones.html');"></ons-tab>
 				<ons-tab label="Control" data-i18n="[label]navi.control" icon="fa-gamepad" page="manualcontrol.html" onclick="pushView(3,'control.html');"></ons-tab>
 				<ons-tab label="Settings" data-i18n="[label]navi.settings" icon="fa-cog" page="settings.html" onclick="pushView(4,'settings.html');"></ons-tab>
@@ -470,10 +504,10 @@
 					font-weight: bolder;
 				}
 
-					.profile-header > span {
-						display: block;
-						max-width: 100%;
-					}
+				.profile-header > span {
+					display: block;
+					max-width: 100%;
+				}
 
 				ons-list-item {
 					color: #444;
@@ -482,6 +516,16 @@
 				.progress-bar-container {
 					position: fixed;
 					width: 100%;
+				}
+
+				.ons-tabbar__content,
+				.ons-tabbar__footer {
+					padding-bottom: env(safe-area-inset-bottom) !important;
+				}
+
+				.page__content {
+					padding-left: env(safe-area-inset-left) !important;
+					padding-right: env(safe-area-inset-right) !important;
 				}
 			</style>
 		</ons-page>

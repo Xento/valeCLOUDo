@@ -39,6 +39,7 @@ RRMapParser.TYPES = {
 	"FORBIDDEN_ZONES": 9,
 	"VIRTUAL_WALLS": 10,
 	"CURRENTLY_CLEANED_BLOCKS": 11,
+	"FORBIDDEN_MOP_ZONES": 12,
 	"DIGEST": 1024
 };
 
@@ -61,7 +62,7 @@ RRMapParser.PARSE_BLOCK = function parseBlock(buf, offset, result) {
 					buf.readUInt16LE(0x08 + offset),
 					buf.readUInt16LE(0x0c + offset)
 				],
-				angle: length >= 12 ? buf.readInt32LE(0x10 + offset) : 0 // gen3+
+				angle: length >= 12 ? buf.readInt32LE(0x10 + offset) : null // gen3+
 			};
 			break;
 		case RRMapParser.TYPES.IMAGE:
@@ -145,6 +146,8 @@ RRMapParser.PARSE_BLOCK = function parseBlock(buf, offset, result) {
 					if (parameters.box.maxY < y) parameters.box.maxY = y;
 					parameters.pixels[k] = v;
 				}
+			} else {
+				parameters.box = { minX: 0, minY: 0, maxX: 100, maxY: 100 }
 			}
 			result[type] = parameters;
 			break;
@@ -193,6 +196,7 @@ RRMapParser.PARSE_BLOCK = function parseBlock(buf, offset, result) {
 			}
 			break;
 		case RRMapParser.TYPES.FORBIDDEN_ZONES:
+		case RRMapParser.TYPES.FORBIDDEN_MOP_ZONES:
 			const forbiddenZoneCount = buf.readUInt32LE(0x08 + offset);
 			const forbiddenZones = [];
 
@@ -309,7 +313,7 @@ RRMapParser.PARSE = function parse(inputMapBuf) {
 				parsedMapData.robot = blocks[RRMapParser.TYPES.ROBOT_POSITION].position;
 				parsedMapData.robot[1] = Tools.DIMENSION_MM - parsedMapData.robot[1];
 			}
-			parsedMapData.robot_angle = parsedMapData.robot && parsedMapData.robot.angle || parsedMapData.path && parsedMapData.path.current_angle || 0;
+			parsedMapData.robot_angle = blocks[RRMapParser.TYPES.ROBOT_POSITION] && blocks[RRMapParser.TYPES.ROBOT_POSITION].angle !== null ? (90 - blocks[RRMapParser.TYPES.ROBOT_POSITION].angle) : parsedMapData.path && (parsedMapData.path.current_angle + 90) || 0;
 			if(blocks[RRMapParser.TYPES.GOTO_TARGET]) {
 				parsedMapData.goto_target = blocks[RRMapParser.TYPES.GOTO_TARGET].position;
 				parsedMapData.goto_target[1] = Tools.DIMENSION_MM - parsedMapData.goto_target[1];
@@ -345,6 +349,17 @@ RRMapParser.PARSE = function parse(inputMapBuf) {
 			}
 			if(blocks[RRMapParser.TYPES.CURRENTLY_CLEANED_BLOCKS]) {
 				parsedMapData.currently_cleaned_blocks = blocks[RRMapParser.TYPES.CURRENTLY_CLEANED_BLOCKS];
+			}
+			if(blocks[RRMapParser.TYPES.FORBIDDEN_MOP_ZONES]) {
+				parsedMapData.forbidden_mop_zones = blocks[RRMapParser.TYPES.FORBIDDEN_MOP_ZONES];
+				parsedMapData.forbidden_mop_zones = parsedMapData.forbidden_mop_zones.map(zone => {
+					zone[1] = Tools.DIMENSION_MM - zone[1];
+					zone[3] = Tools.DIMENSION_MM - zone[3];
+					zone[5] = Tools.DIMENSION_MM - zone[5];
+					zone[7] = Tools.DIMENSION_MM - zone[7];
+
+					return zone;
+				})
 			}
 			return parsedMapData;
 		} else {

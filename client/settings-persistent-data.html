@@ -3,74 +3,139 @@
 		<div class="left">
 			<ons-back-button data-i18n="settings.title" data-i18n-target=".back-button__label">Settings</ons-back-button>
 		</div>
-		<div class="center" data-i18n="settings.persistentDataTitle">Persistent Data</div>
+		<div class="center" data-i18n="settings.persistentData.systemSettingsTitle">System Settings</div>
 		<div class="right">
 		</div>
 	</ons-toolbar>
 	<ons-progress-bar id="loading-bar-settings-persistent-data" value="0" indeterminate="indeterminate"></ons-progress-bar>
 	<ons-list-title style="margin-top:5px;" data-i18n="settings.persistentData.pageTitle">Persistent Data Configuration</ons-list-title>
-	<ons-row>
-		<ons-col></ons-col>
-		<ons-col width="85%" vertical-align='center' style='text-align:center;' data-i18n="settings.persistentData.explanation">Persistent data or "lab mode" is a feature of the Roborock S5x which allows saving forbidden zones and virtual walls. It also allows the robot to drive back to the dock wherever it is and keeps the map from being rotated.</ons-col>
-		<ons-col></ons-col>
-	</ons-row>
-
-	<ons-row id="persistent_data_not_supported" class="hidden">
-		<ons-col></ons-col>
-		<ons-col width="66%" vertical-align='center'>
-			<strong data-i18n="settings.persistentData.notSupported">Sorry, only Roborock S5x supports the persistent map features.</strong>
-		</ons-col>
-		<ons-col></ons-col>
-	</ons-row>
-
-	<form id="persistent_data_form" class="hidden">
-		<ons-row>
-			<ons-col></ons-col>
-			<ons-col width="150px" vertical-align='center' data-i18n="common.enabled">Enabled</ons-col>
-			<ons-col width="35px" vertical-align='center'><ons-checkbox input-id="lab_mode_enabled"></ons-checkbox></ons-col>
-			<ons-col width="125px" vertical-align='center'><ons-button modifier="large" class="button-margin" onclick="saveLabMode();" data-i18n="common.save">Save</ons-button></ons-col>
-			<ons-col></ons-col>
-		</ons-row>
-		<ons-row>
-			<ons-col><br/></ons-col>
-		</ons-row>
-		<ons-row>
-			<ons-col></ons-col>
-			<ons-col width="150px" vertical-align='center' data-i18n="settings.persistentData.deleteData">Delete persistent data</ons-col>
-			<ons-col width="160px" vertical-align='center'>
-				<ons-button id="reset_map_button" title="This deletes the current map, all forbidden zones and virtual walls!" modifier="large" class="button-margin" onclick="document.getElementById('confirm_reset_map').show();" data-i18n="[title]settings.persistentData.deleteDataTitle;settings.persistentData.deleteDataButton">
+	<ons-list class="persistent_data_not_supported hidden">
+		<ons-list-item>
+			<ons-row>
+				<ons-col vertical-align='center' style='text-align:center; font-weigth: 700;' data-i18n="settings.persistentData.notSupported">Persistent map features are not supported on this device.</ons-col>
+			</ons-row>
+		</ons-list-item>
+	</ons-list>
+	<ons-list class="persistent_data_form hidden">
+		<ons-list-item>
+			<div class="left"><div>
+				<div data-i18n="settings.persistentData.enableDataTitle">Persistent data ("lab mode")</div>
+				<div class="small" data-i18n="settings.persistentData.enableDataDesc">allows saving forbidden zones and virtual walls, makes the robot able to drive back to the dock wherever it is, and keeps the map from being rotated</div>
+			</div></div>
+			<div class="right">
+				<ons-switch id="lab_mode_enabled" onchange="disableMapFunctions(!this.checked);"></ons-switch>
+			</div>
+		</ons-list-item>
+		<ons-list-item>
+			<div class="left"><div>
+				<div data-i18n="settings.persistentData.deleteDataTitle">Delete persistent data</div>
+				<div class="small" data-i18n="settings.persistentData.deleteDataDesc">deletes the current map, all forbidden zones and virtual walls</div>
+			</div></div>
+			<div class="right">
+				<ons-button id="reset_map_button" modifier="large" class="button-margin" onclick="document.getElementById('confirm_reset_map').show();" data-i18n="settings.persistentData.deleteDataButton">
 					Reset Map
 				</ons-button>
-			</ons-col>
-			<ons-col></ons-col>
-		</ons-row>
-		<ons-row>
-			<ons-col><br/></ons-col>
-		</ons-row>
-		<ons-row>
-			<ons-col></ons-col>
-			<ons-col width="150px" vertical-align='center' data-i18n="settings.persistentData.exportDesc">Export forbidden markers to Valetudo config</ons-col>
-			<ons-col width="160px" vertical-align='center'>
-				<ons-button id="export_persistent_data" title="This exports forbidden zones and virtual walls data from firmware and saves it in Valetudo" modifier="large" class="button-margin" onclick="showExportDialog();" data-i18n="[title]settings.persistentData.exportTitle;settings.persistentData.exportButton">
+			</div>
+		</ons-list-item>
+		<ons-list-item>
+			<div class="left"><div>
+				<div data-i18n="settings.persistentData.exportTitle">Export forbidden markers to Valetudo config</div>
+				<div class="small" data-i18n="settings.persistentData.exportDesc">This exports forbidden zones and virtual walls data from firmware and saves it in Valetudo</div>
+			</div></div>
+			<div class="right">
+				<ons-button id="export_persistent_data" modifier="large" class="button-margin" onclick="showExportDialog();" data-i18n="settings.persistentData.exportButton">
 					Export
 				</ons-button>
-			</ons-col>
-			<ons-col></ons-col>
-		</ons-row>
-		<ons-row>
-			<ons-col><br/></ons-col>
-		</ons-row>
-		<ons-row>
-			<ons-col></ons-col>
-			<ons-col width="150px" vertical-align='center' data-i18n="settings.persistentData.importDesc">Import forbidden markers from Valetudo config</ons-col>
-			<ons-col width="160px" vertical-align='center'>
-				<ons-button id="import_persistent_data" title="This imports forbidden zones and virtual walls data from Valetudo and sets it in firmware" modifier="large" class="button-margin" onclick="showImportDialog();" data-i18n="[title]settings.persistentData.importTitle;settings.persistentData.importButton">
+			</div>
+		</ons-list-item>
+		<ons-list-item>
+			<div class="left"><div>
+				<div data-i18n="settings.persistentData.importTitle">Import forbidden markers from Valetudo config</div>
+				<div class="small" data-i18n="settings.persistentData.importDesc">This imports forbidden zones and virtual walls data from Valetudo and sets it in firmware</div>
+			</div></div>
+			<div class="right">
+				<ons-button id="import_persistent_data" modifier="large" class="button-margin" onclick="showImportDialog();" data-i18n="settings.persistentData.importButton">
 					Import
 				</ons-button>
-			</ons-col>
-			<ons-col></ons-col>
-		</ons-row>
-	</form>
+			</div>
+		</ons-list-item>
+	</ons-list>
+	<ons-list-title style="margin-top:5px;" data-i18n="settings.persistentData.systemSettingsTitle">System Settings</ons-list-title>
+	<ons-list>
+		<ons-list-item>
+			<div class="left"><div>
+				<div data-i18n="settings.persistentData.rebootTitle">Reboot device</div>
+				<div class="small" data-i18n="settings.persistentData.rebootDesc">will attempt to restart the onboard operating system</div>
+			</div></div>
+			<div class="right">
+				<ons-button modifier="large" class="button-margin" onclick="rebootDevice();" data-i18n="settings.persistentData.reboot">
+					Reboot
+				</ons-button>
+			</div>
+		</ons-list-item>
+		<ons-list-item>
+			<div class="left"><div>
+				<div data-i18n="settings.persistentData.afterCleanTitle">After Cleaning Destination</div>
+				<div class="small" data-i18n="settings.persistentData.afterCleanDesc">defines where robot should go after the cleaning ends</div>
+			</div></div>
+			<div class="right">
+				<ons-select select-id="after_clean_dest" onchange="afterCleanChanged(this);">
+					<option value="0" data-i18n="settings.persistentData.afterCleanDefault">Default</option>
+					<option value="1" data-i18n="settings.persistentData.afterCleanNowhere">Nowhere</option>
+					<option value="2" id="after_clean_spot" style="display: none;" data-i18n="settings.persistentData.afterCleanSpot">Spot</option>
+					<option value="3" data-i18n="settings.persistentData.afterCleanChooseSpot">Choose spot...</option>
+				</ons-select>
+			</div>
+		</ons-list-item>
+		<ons-list-item>
+			<div class="left"><div>
+				<div data-i18n="settings.persistentData.autoDockTitle">Dock Auto Return</div>
+				<div class="small" data-i18n="settings.persistentData.autoDockDesc">defines whether robot should return to dock when idle</div>
+			</div></div>
+			<div class="right">
+				<ons-select select-id="auto_dock_return" onchange="autoDockChanged(this);">
+					<option value="0" data-i18n="settings.persistentData.autoDockNever">Never</option>
+					<option value="1" data-i18n="settings.persistentData.autoDockSleep">On sleep</option>
+					<option value="2" id="auto_dock_delay" style="display: none;" data-i18n="settings.persistentData.autoDockDelay">After</option>
+					<option value="3" data-i18n="settings.persistentData.autoDockChooseDelay">Choose delay...</option>
+				</ons-select>
+			</div>
+		</ons-list-item>
+		<ons-list-item>
+			<div class="left"><div>
+				<div data-i18n="settings.persistentData.autoMapTitle">Auto Map Restore</div>
+				<div class="small" data-i18n="settings.persistentData.autoMapDesc">defines whether to restore a map when returning to the dock</div>
+			</div></div>
+			<div class="right">
+				<ons-select select-id="auto_map_restore" onchange="autoMapChanged(this);">
+					<option value="0" data-i18n="settings.persistentData.autoMapNone">None</option>
+					<option value="1" id="auto_map_name" style="display: none;" data-i18n="settings.persistentData.autoMapName">Map</option>
+					<option value="2" data-i18n="settings.persistentData.autoMapSelectName">Select map...</option>
+				</ons-select>
+			</div>
+		</ons-list-item>
+		<ons-list-item>
+			<div class="left"><div>
+				<div data-i18n="settings.persistentData.mapRestoreTypeTitle">Map restore type</div>
+				<div class="small" data-i18n="settings.persistentData.mapRestoreTypeDesc">defines the method to use for experimental map restoring</div>
+			</div></div>
+			<div class="right">
+				<ons-select select-id="map_restore_type" onchange="restoreTypeChanged(this);">
+					<option value="0" data-i18n="settings.persistentData.restoreTypeDefault">Default</option>
+					<option value="1" data-i18n="settings.persistentData.restoreTypeRestart">Service Restart</option>
+					<option value="2" data-i18n="settings.persistentData.restoreTypeCleaning" disabled>Cleaning Sequence</option>
+					<option value="3" data-i18n="settings.persistentData.restoreTypeNative" disabled>Backup Recovery</option>
+				</ons-select>
+			</div>
+		</ons-list-item>
+	</ons-list>
+	<ons-list>
+		<ons-list-item>
+			<div class="center">
+				<ons-button id="persistent_data_save_button" modifier="large" class="button-margin" onclick="savePersistentData();" disabled data-i18n="common.save">Save</ons-button>
+			</div>
+		</ons-list-item>
+	</ons-list>
 
 	<ons-dialog id="confirm_reset_map" class="persistent-data-confirm">
 		<p class="persistent-data-warning"><span data-i18n="settings.persistentData.deleteDataConfirm">This deletes the currently saved map, all forbidden zones and virtual walls.</span> <span data-i18n="settings.persistentData.genericConfirm">Are you sure to proceed?</span></p>
@@ -91,14 +156,12 @@
 	</ons-dialog>
 
 	<style>
-		#persistent_data_form {
-			margin-top: 1em;
-		}
-		#persistent_data_not_supported {
-			margin-top: 1em;
-		}
 		.hidden {
 			display: none;
+		}
+		div.small {
+			font-size: 0.8em;
+			color: darkgray;
 		}
 		.persistent-data-confirm .dialog-container {
 			display: grid;
@@ -122,50 +185,103 @@
 	</style>
 
 	<script>
-		ons.getScriptPage().onInit = function() {
-		   fn.localize('#settings-persistent-data-page');
-		}
+		var loadingBarSettingsPersistentData = document.getElementById('loading-bar-settings-persistent-data'),
+			afterCleanDestSelect = document.getElementById('after_clean_dest'),
+			autoDockReturnSelect = document.getElementById('auto_dock_return'),
+			autoMapRestoreSelect = document.getElementById('auto_map_restore'),
+			mapRestoreTypeSelect = document.getElementById('map_restore_type'),
+			labModeSwitch = document.getElementById('lab_mode_enabled');
+		var oldLabStatus, oldACD, oldACDCoords, ACD, ACDCoords, oldADR, ADR, oldAMR, oldAMRName, AMR, AMRName, oldMRT, MRT;
 
-		var loadingBarSettingsPersistentData = document.getElementById('loading-bar-settings-persistent-data');
+		ons.getScriptPage().onInit = function() {
+			fn.localize('#settings-persistent-data-page');
+		}
 
 		document.querySelector("#settings-persistent-data-page ons-back-button").onClick = () => fn.popPage(); // case matters!
 
 		ons.getScriptPage().onShow = function () {
-			document.getElementById('lab_mode_enabled').addEventListener("change", function(event) {
-				disableMapFunctions(!event.target.checked)
-			});
-
 			updateSettingsPersistentDataPage();
 		};
 
 		function disableMapFunctions(flag) {
-			const dataButtons = document.querySelectorAll("#reset_map_button, #export_persistent_data, #import_persistent_data");
-			Array.from(dataButtons).forEach(button => {
+			document.querySelectorAll("#reset_map_button, #export_persistent_data, #import_persistent_data").forEach(button => {
 				if (flag) {
 					button.setAttribute("disabled", "true");
 				} else {
 					button.removeAttribute("disabled");
 				}
 			});
+			updateSavePersistentDataButton();
 		};
 
-		function initForm(currentStatus) {
-			var persistentDataForm = document.getElementById('persistent_data_form');
-			document.getElementById('lab_mode_enabled').checked = (currentStatus.lab_status === 1);
-			disableMapFunctions(currentStatus.lab_status !== 1);
-		};
+		function setACDSpotOptionText(coords) {
+			const option = document.getElementById('after_clean_spot')
+			option.textContent = option.textContent.replace(/: \[\d+,\d+\]/,'') + ': ' + JSON.stringify(coords);
+			option.style.display = '';
+			option.parentNode.selectedIndex = 2;
+		}
+
+		function setADRDelayOptionText(delay) {
+			const option = document.getElementById('auto_dock_delay')
+			option.textContent = option.textContent.replace(/: \d{2}:\d{2}\:\d{2}/,'') + ': ' + fn.secondsToHms(delay*60);
+			option.style.display = '';
+			option.parentNode.options[2].value = delay;
+			option.parentNode.selectedIndex = 2;
+		}
+
+		function setAMRNameOptionText(name) {
+			const option = document.getElementById('auto_map_name')
+			option.textContent = option.textContent.replace(/: (.+?)$/,'') + ': ' + name;
+			option.style.display = '';
+			option.parentNode.selectedIndex = 1;
+		}
 
 		function updateSettingsPersistentDataPage() {
 			loadingBarSettingsPersistentData.setAttribute("indeterminate", "indeterminate");
-			fn.prequest("api/current_status")
-			.then((res) => {
-				if(fn.device.model === "roborock.vacuum.s5") {
-					document.getElementById('persistent_data_form').classList.remove("hidden");
-					initForm(res);
-				} else {
-					document.getElementById('persistent_data_not_supported').classList.remove("hidden");
-				}
-			}, (err) => fn.notificationToastError(err))
+			Promise.all([
+				fn.prequest("api/current_status").then(res => {
+					if (!fn.device.features.npd) {
+						oldLabStatus = res.lab_status === 1;
+						document.querySelector('.persistent_data_form').classList.remove('hidden');
+						labModeSwitch.checked = oldLabStatus;
+						disableMapFunctions(!oldLabStatus);
+						if (oldLabStatus) {
+							mapRestoreTypeSelect.options[2].removeAttribute('disabled');
+							if (fn.device.features.v3) {
+								mapRestoreTypeSelect.options[3].removeAttribute('disabled');
+							}
+						}
+					} else {
+						document.querySelector('.persistent_data_not_supported').classList.remove("hidden");
+					}
+				}),
+				fn.prequest("api/system_config").then(res => {
+					oldACD = ACD = res.afterCleanDest || 0;
+					oldACDCoords = '';
+					if (Array.isArray(oldACD)) {
+						oldACDCoords = ACDCoords = oldACD;
+						oldACD = ACD = 2;
+						setACDSpotOptionText(oldACDCoords);
+					}
+					afterCleanDestSelect.value = oldACD;
+					oldADR = ADR = res.autoDockReturn || 0;
+					if (oldADR > 3) {
+						setADRDelayOptionText(oldADR);
+					}
+					autoDockReturnSelect.value = oldADR;
+					oldAMR = AMR = res.autoMapRestore || 0;
+					oldAMRName = '';
+					if (typeof oldAMR !== 'number') {
+						oldAMRName = AMRName = oldAMR;
+						oldAMR = AMR = 1;
+						setAMRNameOptionText(oldAMRName);
+					}
+					autoMapRestoreSelect.value = oldAMR;
+					oldMRT = MRT = res.mapRestoreType || 0;
+					mapRestoreTypeSelect.value = oldMRT;
+				})
+			])
+			.catch(err => fn.notificationToastError(err))
 			.finally(() => loadingBarSettingsPersistentData.removeAttribute("indeterminate"));
 		};
 
@@ -230,15 +346,168 @@
 			.finally(() => loadingBarSettingsPersistentData.removeAttribute("indeterminate"));
 		};
 
-		function saveLabMode() {
-			const labStatus = true === document.getElementById('lab_mode_enabled').checked;
+		function rebootDevice() {
+			ons.notification.confirm(i18next.t('settings.persistentData.rebootConfirm',"Are you sure you want to reboot the operating system of the device?"),{buttonLabels: [i18next.t('common.cancel',"Cancel"), i18next.t('settings.persistentData.reboot',"Reboot")], title: i18next.t('common.confirm',"Confirm")})
+			.then(answer => {
+				if (answer === 1) {
+					loadingBarSettingsPersistentData.setAttribute("indeterminate", "indeterminate");
+					fn.prequest("api/reboot_device","PUT")
+					.then(res => ons.notification.alert(i18next.t('settings.persistentData.rebootNotice',"Device is now restarting, please wait a bit for it to boot."),{title: i18next.t('common.attention',"Attention!")}))
+					.catch(err => fn.notificationToastError(err))
+					.finally(() => loadingBarSettingsPersistentData.removeAttribute("indeterminate"));
+				}
+			});
+		}
+
+		function afterCleanChanged(select) {
+			if (select.value === "3") {
+				loadingBarSettingsPersistentData.setAttribute("indeterminate", "indeterminate");
+				fn.prequest("api/spots")
+				.then(res => {
+					loadingBarSettingsPersistentData.removeAttribute("indeterminate");
+					let spots = res,
+						options = [];
+					if (!spots.length) {
+						ons.notification.alert(i18next.t('settings.persistentData.afterCleanMenuNoSpots',"No spots are available to use as destination after cleaning."),{title: i18next.t('common.attention',"Attention!")});
+						select.value = oldACD;
+						return;
+					}
+					for (var i = 0; i < spots.length; i++){
+						options.push(spots[i].name);
+					}
+					options.push({
+						label: i18next.t('common.cancel',"Cancel"),
+						icon: 'md-close'
+					});
+					return ons.openActionSheet({
+						title: i18next.t('settings.persistentData.afterCleanMenuDesc',"Choose a spot to move to after the cleaning:"),
+						cancelable: true,
+						buttons: options
+					}).then(function (index) {
+						if (index > -1 && index < spots.length && spots[index].coordinates[0] > 0 && spots[index].coordinates[1] > 0) {
+							ACD = 2;
+							ACDCoords = spots[index].coordinates;
+							setACDSpotOptionText(ACDCoords);
+						} else {
+							select.value = oldACD;
+						}
+					});
+				})
+				.catch(err => fn.notificationToastError(err))
+				.finally(() => {
+					updateSavePersistentDataButton();
+				});
+			} else {
+				ACD = +select.value;
+				updateSavePersistentDataButton();
+			}
+		}
+
+		function autoDockChanged(select) {
+			if (select.value === "3") {
+				ons.notification.prompt(i18next.t('settings.persistentData.autoDockDelayPrompt',{defaultValue: "Please enter delay in minutes ({{range}}) after which idle robot should return to dock:", range: '5-60'}),{title: i18next.t('common.prompt',"Prompt"), cancelable: true, buttonLabels: [i18next.t('common.cancel',"Cancel"), i18next.t('common.ok',"OK")]})
+				.then(res => {
+					res = parseInt(res);
+					if (!res || !(res >= 5 && res <= 60)) {
+						if (res !== undefined) ons.notification.alert(i18next.t('settings.persistentData.autoDockDelayErr',"The specified value does not fall within the allowed range."),{title: i18next.t('common.attention',"Attention!")});
+						select.value = oldADR;
+						return;
+					}
+					ADR = res;
+					setADRDelayOptionText(ADR);
+				})
+				.catch(err => fn.notificationToastError(err))
+				.finally(() => {
+					updateSavePersistentDataButton();
+				});
+			} else {
+				ADR = +select.value;
+				updateSavePersistentDataButton();
+			}
+		}
+
+		function autoMapChanged(select) {
+			if (select.value === "2") {
+				let slots = [], options = [];
+				loadingBarSettingsPersistentData.setAttribute("indeterminate", "indeterminate");
+				fn.prequest("api/list_maps")
+				.then(data => {
+					loadingBarSettingsPersistentData.removeAttribute("indeterminate");
+					data.sort((a, b) => a.localeCompare(b));
+					slots = data;
+					for (var i = 0; i < data.length; i++) {
+						options.push((/^[0-9]+$/.test(data[i]) ? i18next.t('home.popups.slotNo',"slot #") : "") + data[i]);
+					}
+					options.push({
+						label: options.length ? i18next.t('common.cancel',"Cancel") : i18next.t('home.popups.noMapsStored',"No saved maps!"),
+						icon: 'md-close'
+					});
+					let slotsList = ons.openActionSheet({
+						title: i18next.t('settings.persistentData.autoMapMenuSelect',"Select a map to load upon returning to the dock:"),
+						cancelable: true,
+						buttons: options
+					});
+					var slotsButtons = document.querySelectorAll('ons-action-sheet-button');
+					for (var i = 0; i < slotsButtons.length; i++) {
+						if (!i) slotsButtons[i].parentNode.parentNode.title = '';
+						slotsButtons[i].title = ''; // get rid of stupid title repeating on all buttons
+					}
+					return slotsList;
+				})
+				.then(index => {
+					if (index > -1 && index < slots.length) {
+						AMR = 1;
+						AMRName = slots[index];
+						setAMRNameOptionText(AMRName);
+					} else {
+						select.value = oldAMR;
+					}
+				})
+				.catch(err => fn.notificationToastError(err))
+				.finally(() => {
+					updateSavePersistentDataButton();
+				});
+			} else {
+				AMR = +select.value;
+				updateSavePersistentDataButton();
+			}
+		}
+
+		function restoreTypeChanged(select) {
+			MRT = +select.value;
+			updateSavePersistentDataButton();
+		}
+
+		function updateSavePersistentDataButton() {
+			const button = document.getElementById('persistent_data_save_button');
+			if (labModeSwitch.checked !== oldLabStatus || ADR !== oldADR || MRT !== oldMRT ||
+				ACD !== 2 && ACD !== oldACD || ACD === 2 && JSON.stringify(oldACDCoords) !== JSON.stringify(ACDCoords) ||
+				AMR !== 1 && AMR !== oldAMR || AMR === 1 && JSON.stringify(oldAMRName) !== JSON.stringify(AMRName)) {
+				button.removeAttribute('disabled');
+			} else {
+				button.setAttribute('disabled','disabled');
+			}
+		}
+
+		function savePersistentData() {
+			console.log('asdf')
+			const labStatus = true === labModeSwitch.checked;
+			let promises = [fn.prequestWithPayload("api/system_config", JSON.stringify({
+				afterCleanDest: +afterCleanDestSelect.value === 2 ? ACDCoords : +afterCleanDestSelect.value,
+				autoDockReturn: +autoDockReturnSelect.value,
+				autoMapRestore: +autoMapRestoreSelect.value === 1 ? AMRName : +autoMapRestoreSelect.value,
+				mapRestoreType: +mapRestoreTypeSelect.value
+			}), "PUT")];
+			if (labModeSwitch.checked !== oldLabStatus) {
+				promises.push(fn.prequestWithPayload("api/set_lab_status", JSON.stringify({ lab_status: labStatus }), "PUT"));
+			}
 			loadingBarSettingsPersistentData.setAttribute("indeterminate", "indeterminate");
-			fn.prequestWithPayload("api/set_lab_status", JSON.stringify({ lab_status: labStatus }), "PUT")
+			Promise.all(promises)
 			.then(
 				(res) => fn.notificationToastOK(i18next.t('settings.persistentData.settingsSaved',"Settings saved!")),
 				(err) => fn.notificationToastError(err)
 			)
-			.finally(() => loadingBarSettingsPersistentData.removeAttribute("indeterminate"));
+			.finally(() => updateSettingsPersistentDataPage());
 		};
 	</script>
 	<script type="module" crossorigin>
@@ -248,9 +517,15 @@
 				const mapData = RRMapParser.PARSE(pako.inflate(gzippedMap)) || {};
 				return {
 					virtual_walls: mapData.virtual_walls || [],
-					forbidden_zones: mapData.forbidden_zones || []
+					forbidden_zones: mapData.forbidden_zones || [],
+					forbidden_mop_zones: mapData.forbidden_mop_zones || []
 				};
-			} catch (e) {}
+			} catch (e) { return {}; }
 		}
 	</script>
+	<style>
+		#settings-persistent-data-page ons-select {
+			text-align-last: right;
+		}
+	</style>
 </ons-page>

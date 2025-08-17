@@ -3,7 +3,7 @@ import { FallbackMap } from "./fallback-map.js";
 import { MapDrawer } from "./map-drawer.js";
 import { PathDrawer } from "./path-drawer.js";
 import { trackTransforms } from "./tracked-canvas.js";
-import { GotoPoint, Zone, Segment, ForbiddenZone, VirtualWall, CurrentCleaningZone, GotoTarget } from "./locations.js";
+import { GotoPoint, Zone, Segment, ForbiddenZone, VirtualWall, CurrentCleaningZone, ForbiddenMopZone, GotoTarget } from "./locations.js";
 import { TouchHandler } from "./touch-handling.js";
 
 /**
@@ -31,14 +31,16 @@ export function VacuumMap(canvasElement) {
 	canvas.width = canvas.clientWidth;
 	canvas.height = canvas.clientHeight;
 
-	let parsedMap = {}, deviceStatus = {};
-	let locations = [];
+	let parsedMap = {}, defaultMap = false, deviceStatus = {};
+	let locations = [], storedLocations = {zones: [], segments: []};
 
 	let robotPosition = [25600, 25600];
 	let chargerPosition = [25600, 25600];
 	let robotAngle = 0;
 
 	let redrawCanvas = null;
+
+	let lastTap = {x: null, y: null, d: 0};
 
 	function probeWebSocket() {
 		clearTimeout(probeTimeout);
@@ -77,15 +79,14 @@ export function VacuumMap(canvasElement) {
 			if (event.data.constructor === ArrayBuffer) {
 				let data = parseMap(event.data);
 				updateMap(data);
-			} else if (event.data.slice(0,10) === '{"status":') {
+			} else if (event.data.startsWith('{"status":')) {
 				try {
 					let data = JSON.parse(event.data);
-					updateStatus(data.status);
 					deviceStatus = data.status;
-				} catch(e) {
-					//TODO something reasonable
-					console.log(e);
-				}
+					canvas.dispatchEvent(new CustomEvent('updateStatus', {detail: deviceStatus}));
+				} catch(e) {}
+			} else if (event.data.startsWith('{"restoreLocations":')) {
+				restoreLocations();
 			}
 		};
 
@@ -103,7 +104,8 @@ export function VacuumMap(canvasElement) {
 
 	function parseMap(gzippedMap) {
 		try {
-			return gzippedMap && gzippedMap.byteLength && RRMapParser.PARSE(pako.inflate(gzippedMap)) || FallbackMap.parsedData();
+			defaultMap = false;
+			return gzippedMap && gzippedMap.byteLength && RRMapParser.PARSE(pako.inflate(gzippedMap)) || (defaultMap = true, FallbackMap.parsedData());
 		} catch (e) { console.log(e); };
 		return null;
 	}
@@ -156,22 +158,22 @@ export function VacuumMap(canvasElement) {
 		locations = locations.filter(l => !(l instanceof Segment)).concat(newSegments);
 	}
 
-	function updateForbiddenZones(forbiddenZoneData) {
-		locations = locations
-			.filter(l => !(l instanceof ForbiddenZone))
-			.concat(forbiddenZoneData.map(zone => {
-				const p1 = convertFromRealCoords({x: zone[0], y: zone[1]});
-				const p2 = convertFromRealCoords({x: zone[2], y: zone[3]});
-				const p3 = convertFromRealCoords({x: zone[4], y: zone[5]});
-				const p4 = convertFromRealCoords({x: zone[6], y: zone[7]});
-				return new ForbiddenZone(
-					p1.x, p1.y,
-					p2.x, p2.y,
-					p3.x, p3.y,
-					p4.x, p4.y
-				);
-			}));
-	}
+    function updateForbiddenZones(forbiddenZoneData, mop) {
+        locations = locations
+            .filter(l => !(l instanceof (mop ? ForbiddenMopZone : ForbiddenZone)))
+            .concat(forbiddenZoneData.map(zone => {
+                const p1 = convertFromRealCoords({x: zone[0], y: zone[1]});
+                const p2 = convertFromRealCoords({x: zone[2], y: zone[3]});
+                const p3 = convertFromRealCoords({x: zone[4], y: zone[5]});
+                const p4 = convertFromRealCoords({x: zone[6], y: zone[7]});
+                return new (mop ? ForbiddenMopZone : ForbiddenZone)(
+                    p1.x, p1.y,
+                    p2.x, p2.y,
+                    p3.x, p3.y,
+                    p4.x, p4.y
+                );
+            }));
+    }
 
 	function updateGotoTarget(gotoTarget) {
 		locations = locations
@@ -205,6 +207,7 @@ export function VacuumMap(canvasElement) {
 	function updateMapMetadata() {
 		updateGotoTarget(parsedMap.goto_target);
 		updateForbiddenZones(parsedMap.forbidden_zones || []);
+		updateForbiddenZones(parsedMap.forbidden_mop_zones || [], true);
 		updateVirtualWalls(parsedMap.virtual_walls|| []);
 		updateCurrentZones((deviceStatus.in_cleaning === 2) && parsedMap.currently_cleaned_zones || []);
 	}
@@ -213,16 +216,30 @@ export function VacuumMap(canvasElement) {
 	 * Public function to update mapdata and call internal update to redraw it.
 	 * Data is distributed into the subcomponents for rendering the map / path.
 	 * @param {object} mapData - parsed by RRMapParser data from "/api/map/latest" route
+	 * @param {bool} initial - should be set to true when user reopens the map
 	 */
-	function updateMap(mapData) {
+	function updateMap(mapData,initial) {
 		parsedMap = mapData;
+		checkTranslatePosition();
 		updateMapInt();
+	}
+
+	// makes sure map is still visible on canvas and fixes that if it's not
+	function checkTranslatePosition(forced) {
+		const ctx = canvas.getContext('2d'), tmatrix = ctx.getTransform();
+		if (forced || !(-tmatrix.e < (parsedMap.image.box.maxX - 50)*currentScale && -tmatrix.e > (parsedMap.image.box.minX + 50)*currentScale - canvas.width)) {
+			tmatrix.e = (-parsedMap.image.box.minX + 25)*currentScale;
+		}
+		if (forced || !(-tmatrix.f < (parsedMap.image.box.maxY - 50)*currentScale && -tmatrix.f > (parsedMap.image.box.minY + 50)*currentScale - canvas.height)) {
+			tmatrix.f = (-parsedMap.image.box.minY + 25)*currentScale;
+		}
+		ctx.setTransform(tmatrix.a,tmatrix.b,tmatrix.c,tmatrix.d,tmatrix.e,tmatrix.f);
 	}
 
 	/**
 	 * Private function to update the displayed mapdata periodically.
 	 */
-	function updateMapInt(mapData) {
+	function updateMapInt() {
 		mapDrawer.draw(parsedMap.image);
 		if (options.noPath) {
 			pathDrawer.setPath({},{});
@@ -242,19 +259,15 @@ export function VacuumMap(canvasElement) {
 		switch (options.metaData) {
 			case false:
 			case "none": break;
-			case "forbidden": updateForbiddenZones(parsedMap.forbidden_zones || []); updateVirtualWalls(parsedMap.virtual_walls|| []); break;
+			case "forbidden":
+				updateForbiddenZones(parsedMap.forbidden_zones || []);
+				updateForbiddenZones(parsedMap.forbidden_mop_zones || [], true);
+				updateVirtualWalls(parsedMap.virtual_walls|| []);
+				break;
 			default: updateMapMetadata();
 		}
 
 		if (redrawCanvas) redrawCanvas();
-	}
-
-	/**
-	 * Private function to fire status updates onto the map page (currently got from websocket connections only)
-	 * @param {object} status - the json data as in dummycloud.connectedRobot.status
-	 */
-	function updateStatus(status) {
-		canvas.dispatchEvent(new CustomEvent('updateStatus', {detail: status}));
 	}
 
 	/**
@@ -263,7 +276,7 @@ export function VacuumMap(canvasElement) {
 	 * @param {{x: number, y: number}} coordinatesInMapSpace
 	 */
 	function convertToRealCoords(coordinatesInMapSpace) {
-		return { x: Math.floor(coordinatesInMapSpace.x * 50), y: Math.floor(coordinatesInMapSpace.y * 50) };
+		return { x: Math.round(coordinatesInMapSpace.x * 50), y: Math.round(coordinatesInMapSpace.y * 50) };
 	}
 
 	/**
@@ -271,7 +284,7 @@ export function VacuumMap(canvasElement) {
 	 * @param {{x: number, y: number}} coordinatesInMillimeter
 	 */
 	function convertFromRealCoords(coordinatesInMillimeter) {
-		return { x: Math.floor(coordinatesInMillimeter.x / 50), y: Math.floor(coordinatesInMillimeter.y / 50) };
+		return { x: coordinatesInMillimeter.x / 50, y: coordinatesInMillimeter.y / 50 };
 	}
 
 	/**
@@ -286,7 +299,7 @@ export function VacuumMap(canvasElement) {
 		ctx.imageSmoothingEnabled = false;
 		trackTransforms(ctx);
 
-		window.addEventListener('resize', () => {
+		canvas.addEventListener('resizeCanvas', () => {
 			// Save the current transformation and recreate it
 			// as the transformation state is lost when changing canvas size
 			// https://stackoverflow.com/questions/48044951/canvas-state-lost-after-changing-size
@@ -306,14 +319,21 @@ export function VacuumMap(canvasElement) {
 			canvas.width / (boundingBox.maxX - boundingBox.minX + 50),
 			canvas.height / (boundingBox.maxY - boundingBox.minY + 50)
 		),6.5),0.7);
-		const sst = fetchScaleTranslate();
-
-		currentScale = sst.z >= 0.7 && sst.z <= 6.5 ? sst.z : initialScalingFactor;
-		ctx.scale(currentScale, currentScale);
-		ctx.translate(
-			(sst.x < boundingBox.maxX - 50 && sst.x > boundingBox.minX + 50 - canvas.width/currentScale) ? -sst.x : -boundingBox.minX + 25,
-			(sst.y < boundingBox.maxY - 50 && sst.y > boundingBox.minY + 50 - canvas.height/currentScale) ? -sst.y : -boundingBox.minY + 25
-		);
+		if (options.controlMap) {
+			currentScale = Math.min(5.4, canvas.width / 80);
+		} else if (!defaultMap) {
+			const sst = fetchScaleTranslate();
+			currentScale = sst.z >= 0.7 && sst.z <= 6.5 ? sst.z : initialScalingFactor;
+			ctx.scale(currentScale, currentScale);
+			if (!isNaN(sst.x) && !isNaN(sst.y)) {
+				ctx.translate(-sst.x,-sst.y);
+			}
+			checkTranslatePosition();
+		} else {
+			currentScale = initialScalingFactor;
+			ctx.scale(currentScale, currentScale);
+			checkTranslatePosition(true);
+		}
 
 		function clearContext(ctx) {
 			ctx.save();
@@ -352,20 +372,36 @@ export function VacuumMap(canvasElement) {
 				canvasimg.height = img.height + 4
 				var ctximg = canvasimg.getContext('2d');
 				ctximg.imageSmoothingQuality = 'high';
-				const offset = 90;
 				ctximg.clearRect(0, 0, canvasimg.width, canvasimg.height);
 				ctximg.translate(canvasimg.width / 2, canvasimg.height / 2);
-				ctximg.rotate((angle + offset) * Math.PI / 180);
+				ctximg.rotate(angle * Math.PI / 180);
 				ctximg.drawImage(img, -img.width / 2, -img.height / 2);
 				return canvasimg;
 			}
 			const robotPositionInPixels = new DOMPoint(robotPosition[0] / 50, robotPosition[1] / 50).matrixTransform(transformMapToScreenSpace);
-			const robotIcon = robotAngle ? rotateRobot(img_rocky_scaled, robotAngle) : img_rocky_scaled;
+			const robotIcon = robotAngle && !options.controlMap ? rotateRobot(img_rocky_scaled, robotAngle) : img_rocky_scaled;
 			ctx.drawImage(
 				robotIcon,
 				robotPositionInPixels.x - robotIcon.width / 2,
 				robotPositionInPixels.y - robotIcon.height / 2,
 			);
+			if (options.controlMap) {
+				ctx.save();
+				ctx.lineWidth = Math.max(2,currentScale*0.7);
+				ctx.strokeStyle = 'rgba(255,0,0,0.8)';
+				ctx.setLineDash([Math.max(6,currentScale*3), Math.max(2,currentScale*1)]);
+				ctx.beginPath();
+				ctx.moveTo(robotPositionInPixels.x, robotPositionInPixels.y + img_rocky_scaled.height/1.2);
+				ctx.lineTo(robotPositionInPixels.x, robotPositionInPixels.y + img_rocky_scaled.height*4);
+				ctx.moveTo(robotPositionInPixels.x, robotPositionInPixels.y - img_rocky_scaled.height/1.2);
+				ctx.lineTo(robotPositionInPixels.x, robotPositionInPixels.y - img_rocky_scaled.height*4);
+				ctx.moveTo(robotPositionInPixels.x + img_rocky_scaled.height/1.2, robotPositionInPixels.y);
+				ctx.lineTo(robotPositionInPixels.x + img_rocky_scaled.height*4,   robotPositionInPixels.y);
+				ctx.moveTo(robotPositionInPixels.x - img_rocky_scaled.height/1.2, robotPositionInPixels.y);
+				ctx.lineTo(robotPositionInPixels.x - img_rocky_scaled.height*4,   robotPositionInPixels.y);
+				ctx.stroke();
+				ctx.restore();
+			}
 		}
 
 		/**
@@ -393,7 +429,13 @@ export function VacuumMap(canvasElement) {
 		 */
 		function redraw() {
 			clearContext(ctx);
-
+			if (options.controlMap) {
+				ctx.setTransform(currentScale, 0, 0, currentScale, 0, 0);
+				if (robotAngle) ctx.rotate((-robotAngle % 360)*Math.PI / 180);
+				const transformedPoint = new DOMPoint(robotPosition[0] / 50, robotPosition[1] / 50).matrixTransform(ctx.getTransform());
+				const {a, b, c, d, e, f} = ctx.getTransform();
+				ctx.setTransform(a, b, c, d, Math.floor(canvas.width/2 - e - transformedPoint.x), Math.floor(canvas.height/2 - f - transformedPoint.y)); // there should be a better way, obviously
+			}
 			// place map
 			ctx.drawImage(mapDrawer.canvas, 0, 0);
 
@@ -412,7 +454,7 @@ export function VacuumMap(canvasElement) {
 			usingOwnTransform(ctx, (ctx, transform) => {
 				let zoneNumber = 0;
 				// we'll define locations drawing order (currently it's reversed) so the former location types is drawn over the latter ones
-				let activeLocation = null, locationTypes = {GotoPoint: 0, Segment: 1, Zone: 2, VirtualWall: 3, ForbiddenZone: 4, CurrentCleaningZone: 5};
+				let activeLocation = null, locationTypes = {GotoPoint: 0, Segment: 1, Zone: 2, VirtualWall: 3, ForbiddenZone: 4, ForbiddenMopZone: 5, CurrentCleaningZone: 6};
 				locations.sort((a,b) => {return locationTypes[b.constructor.name] - locationTypes[a.constructor.name]; });
 				locations.forEach(location => {
 					if (location instanceof GotoPoint) {
@@ -449,6 +491,7 @@ export function VacuumMap(canvasElement) {
 		updateMapInt();
 
 		function storeScaleTranslate() {
+			if (defaultMap) return
 			const { x, y } = ctx.transformedPoint(0,0);
 			localStorage.setItem('scaleTranslate', JSON.stringify({x: x, y: y, z: currentScale}));
 		}
@@ -529,7 +572,7 @@ export function VacuumMap(canvasElement) {
 			var currentlyActive = -1, takenAction = false;
 			var processTap = function(i,locations) {
 				const location = locations[i];
-				if(typeof location.tap === "function") {
+				if(typeof location.tap === "function" && !(location instanceof Segment && locations.some(l => l instanceof Zone))) {
 					const result = location.tap({x: tappedX, y: tappedY}, ctx.getTransform()) || {};
 					if(result.updatedLocation) {
 						locations[i] = result.updatedLocation;
@@ -583,6 +626,14 @@ export function VacuumMap(canvasElement) {
 			locations = locations.filter(l => !(l instanceof GotoPoint));
 			if(!takenAction && !options.noGotoPoints) {
 				locations.push(new GotoPoint(tappedPoint.x, tappedPoint.y));
+				// show current coordinates in alert message by double tap (but only when allowed to set a new point on the map)
+				if ((Date.now() - lastTap.d < 5e2) && Math.abs(lastTap.x - tappedPoint.x) < 10 && Math.abs(lastTap.y - tappedPoint.y) < 10) {
+					window.alert(JSON.stringify(convertToRealCoords(lastTap)));
+					lastTap = {x: null, y: null, d: 0};
+				} else {
+					lastTap = {x: tappedPoint.x, y: tappedPoint.y, d: Date.now()};
+				}
+
 			}
 
 			redraw();
@@ -631,6 +682,7 @@ export function VacuumMap(canvasElement) {
 
 			if (scaleX > 6.5 || scaleX < 0.7) {
 				ctx.restore();
+				return evt.preventDefault() && false;
 			}
 
 			// translate
@@ -736,7 +788,11 @@ export function VacuumMap(canvasElement) {
 			.map(prepareWallCoordinatesForApi);
 
 		const forbiddenZones = locations
-			.filter(location => location instanceof ForbiddenZone)
+			.filter(location => location instanceof ForbiddenZone && !(location instanceof ForbiddenMopZone))
+			.map(prepareFobriddenZoneCoordinatesForApi);
+
+		const forbiddenMopZones = locations
+			.filter(location => location instanceof ForbiddenMopZone)
 			.map(prepareFobriddenZoneCoordinatesForApi);
 
 		return {
@@ -744,7 +800,8 @@ export function VacuumMap(canvasElement) {
 			zones,
 			gotoPoints,
 			virtualWalls,
-			forbiddenZones
+			forbiddenZones,
+            forbiddenMopZones
 		};
 	}
 
@@ -759,7 +816,13 @@ export function VacuumMap(canvasElement) {
 			const p2 = convertFromRealCoords({x: zoneCoordinates[2], y: zoneCoordinates[3]});
 			newZone = new Zone(p1.x, p1.y, p2.x, p2.y, zoneCoordinates[4]);
 		} else {
-			newZone = new Zone(480, 480, 550, 550, 1);
+			newZone = new Zone(480, 480, 555, 550, 1);
+		}
+
+		// check whether this zone has nearly the same left top position as some other zone
+		while (locations.some(l => l instanceof Zone && Math.abs(l.x1 - newZone.x1) < 4 && Math.abs(l.y1 - newZone.y1) < 4)) {
+			newZone.x1 += 5; newZone.y1 += 5;
+			newZone.x2 += 5; newZone.y2 += 5;
 		}
 
 		// if there's a zone, hide all segments
@@ -790,8 +853,55 @@ export function VacuumMap(canvasElement) {
 		if (redrawCanvas) redrawCanvas();
 	}
 
+	function selectSegment(idx,sequence) {
+		let segment = locations.find(l => l instanceof Segment && l.idx === idx);
+		if (segment) {
+			segment.highlighted = true;
+			segment.changed = true;
+			segment.sequence = sequence;
+			if (redrawCanvas) redrawCanvas();
+		}
+	}
+
 	function clearLocations() {
-		locations = locations.filter(l => l.editable !== true);
+		// saving
+		storedLocations = {zones: [], segments: []};
+		locations.filter(l => l instanceof Zone).forEach(l => {
+			storedLocations.zones.push([l.x1,l.y1,l.x2,l.y2,l.iterations,l.sequence]);
+		});
+		locations.filter(l => l instanceof Segment && !isNaN(l.sequence)).forEach(l => {
+			storedLocations.segments.push([l.idx,l.sequence]);
+		});
+		// clearing
+		locations = locations.filter(l => l.editable !== true && !(l instanceof GotoPoint));
+		locations.filter(l => l instanceof Segment && !isNaN(l.sequence)).forEach(segment => {
+			delete segment.sequence;
+			segment.highlighted = false;
+			segment.changed = true;
+		});
+		emitZoneSelection(false);
+		if (redrawCanvas) redrawCanvas();
+	}
+
+	function restoreLocations() {
+		if (!locations.some(l => l instanceof Zone)) {
+			storedLocations.zones.forEach(z => {
+				let l = new Zone(...z.slice(0,5));
+				l.active = false;
+				l.sequence = z[5];
+				locations.push(l);
+			});
+		}
+		if (!locations.some(l => l instanceof Segment && l.highlighted === true)) {
+			let found;
+			storedLocations.segments.forEach(segment => {
+				if (found = locations.find(l => l instanceof Segment && l.idx === segment[0])) {
+					found.highlighted = true;
+					found.changed = true;
+					found.sequence = segment[1];
+				}
+			});
+		}
 		if (redrawCanvas) redrawCanvas();
 	}
 
@@ -814,16 +924,16 @@ export function VacuumMap(canvasElement) {
 		if (redrawCanvas) redrawCanvas();
 	}
 
-	function addForbiddenZone(zoneCoordinates, addZoneInactive, zoneEditable) {
+	function addForbiddenZone(zoneCoordinates, addZoneInactive, zoneEditable, mop) {
 		let newZone;
 		if (zoneCoordinates) {
 			const p1 = convertFromRealCoords({x: zoneCoordinates[0], y: zoneCoordinates[1]});
 			const p2 = convertFromRealCoords({x: zoneCoordinates[2], y: zoneCoordinates[3]});
 			const p3 = convertFromRealCoords({x: zoneCoordinates[4], y: zoneCoordinates[5]});
 			const p4 = convertFromRealCoords({x: zoneCoordinates[6], y: zoneCoordinates[7]});
-			newZone = new ForbiddenZone(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, p4.x, p4.y, zoneEditable);
+			newZone = new (mop ? ForbiddenMopZone : ForbiddenZone)(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, p4.x, p4.y, zoneEditable);
 		} else {
-			newZone = new ForbiddenZone(480, 480, 550, 480, 550, 550, 480, 550, zoneEditable);
+			newZone = new (mop ? ForbiddenMopZone : ForbiddenZone)(480, 480, 550, 480, 550, 550, 480, 550, zoneEditable);
 		}
 
 		if(addZoneInactive) {
@@ -891,11 +1001,11 @@ export function VacuumMap(canvasElement) {
 		closeWebSocket: closeWebSocket,
 		parseMap: parseMap,
 		updateMap: updateMap,
-		updateStatus: updateStatus,
 		getLocations: getLocations,
 		getParsedMap: getParsedMap,
 		addZone: addZone,
 		addSpot: addSpot,
+		selectSegment: selectSegment,
 		clearLocations: clearLocations,
 		addVirtualWall: addVirtualWall,
 		addForbiddenZone: addForbiddenZone,
