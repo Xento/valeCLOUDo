@@ -19,19 +19,19 @@
 	},
 	"author": "",
 	"dependencies": {
-		"body-parser": "^1.20.2",
-		"compression": "^1.7.4",
-		"express": "^4.18.2",
+		"body-parser": "^1.20.3",
+		"compression": "^1.8.1",
+		"express": "^4.21.2",
 		"express-basic-auth": "^1.2.1",
 		"express-dynamic-middleware": "^1.0.0",
 		"express-force-ssl": "^0.3.2",
-		"mqtt": "^4.3.7",
-		"multer": "^1.4.5-lts.1",
+		"mqtt": "^4.3.8",
+		"multer": "^2.0.2",
 		"pngjs": "^5.0.0",
 		"prettycron": "^0.10.0",
 		"slimbot": "^5.1.0",
 		"socks5-client": "^1.2.8",
-		"ws": "^8.14.1"
+		"ws": "^8.18.3"
 	},
 	"devDependencies": {
 		"pkg": "5.8.1"
